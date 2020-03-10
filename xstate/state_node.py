@@ -1,7 +1,10 @@
+from typing import Dict
 from xstate.transition import Transition
 
 
 class StateNode:
+    on: Dict[str, Transition]
+
     def __init__(self, config, machine, parent=None):
         self.parent = parent
         self.id = config.get("id", machine.id + "." + config["key"])

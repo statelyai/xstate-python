@@ -1,4 +1,5 @@
 from xstate.machine import Machine
+from xstate.state import State
 
 example = {
     "key": "foo",
@@ -15,4 +16,13 @@ example = {
 
 
 def test_machine():
-    assert Machine(example).states["bar"].on["TOUCH"].target[0].id == "blahblahblah"
+    print(
+        [
+            t.id
+            for t in Machine(example).transition(State("bar", {"foo": "bar"}), "TOUCH")
+        ]
+    )
+    assert (
+        Machine(example).transition(State("bar", {"foo": "bar"}), "TOUCH")[0].id
+        == "machine.foo.baz"
+    )
