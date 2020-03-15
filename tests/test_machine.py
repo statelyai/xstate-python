@@ -4,24 +4,27 @@ from xstate.state import State
 example = {
     "key": "foo",
     "id": "machine.foo",
-    "states": {
-        "bar": {
-            "key": "bar",
-            "id": "machine.foo.bar",
-            "on": {"TOUCH": {"target": ["machine.foo.baz"]}},
-        },
-        "baz": {"key": "baz"},
-    },
+    "states": {"bar": {"on": {"TOUCH": "baz"},}, "baz": {},},
 }
+
+lights = Machine(
+    {
+        "key": "lights",
+        "id": "lights",
+        "initial": "green",
+        "states": {
+            "green": {"on": {"TIMER": "yellow"}},
+            "yellow": {"on": {"TIMER": "red"}},
+            "red": {"states": {"walk": {}, "wait": {}, "stop": {}}},
+        },
+    }
+)
 
 
 def test_machine():
-    print(
-        [
-            t.id
-            for t in Machine(example).transition(State("bar", {"foo": "bar"}), "TOUCH")
-        ]
-    )
+    print(lights._get_by_id("lights.red.walk"))
+    print([item.id for item in lights._get_configuration({"red": "walk"})])
+
     assert (
         Machine(example).transition(State("bar", {"foo": "bar"}), "TOUCH")[0].id
         == "machine.foo.baz"
