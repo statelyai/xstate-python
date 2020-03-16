@@ -22,7 +22,7 @@ lights = Machine(
 
 
 def test_machine():
-    print(lights._get_by_id("lights.red.walk"))
+    print([target.id for target in lights.root.initial.target])
     print([item.id for item in lights._get_configuration({"red": "walk"})])
 
     assert (

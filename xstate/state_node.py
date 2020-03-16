@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, Optional, Union
 
 from xstate.transition import Transition
 
@@ -10,9 +10,16 @@ if TYPE_CHECKING:
 class StateNode:
     on: Dict[str, Transition]
     machine: Machine
-    parent: StateNode
+    parent: Union[StateNode, Machine]
+    initial: Optional[Transition]
 
-    def __init__(self, config, machine: Machine, key: str, parent: StateNode = None):
+    def __init__(
+        self,
+        config,
+        machine: Machine,
+        key: str,
+        parent: Union[StateNode, Machine] = None,
+    ):
         self.parent = parent
         self.id = config.get("id", parent.id + "." + key)
 
@@ -25,6 +32,11 @@ class StateNode:
             k: Transition(v, source=self, event=k)
             for k, v in config.get("on", {}).items()
         }
+        self.initial = (
+            None
+            if config.get("initial", None) is None
+            else Transition(config.get("initial"), source=self, event=None)
+        )
 
         machine._register(self)
 

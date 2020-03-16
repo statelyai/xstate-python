@@ -4,19 +4,19 @@ from xstate.state import State
 
 
 class Machine:
-    states: Dict[str, StateNode]
+    root: StateNode
     _id_map: Dict[str, StateNode]
 
     def __init__(self, config):
         self.id = config["id"]
         self._id_map = {}
-        self.states = {
-            k: StateNode(v, parent=self, machine=self, key=k)
-            for k, v in config.get("states", {}).items()
-        }
+        self.root = StateNode(
+            config, machine=self, key=config.get("id", "(machine)"), parent=self
+        )
+        self.states = self.root.states
 
     def transition(self, state: State, event: str):
-        state_node = self.states.get(state.value, None)
+        state_node = self.root.states.get(state.value, None)
 
         if state_node is None:
             raise ValueError("nope")
@@ -37,7 +37,7 @@ class Machine:
 
     def _get_configuration(self, state_value, parent=None) -> List[StateNode]:
         if parent is None:
-            parent = self
+            parent = self.root
 
         if isinstance(state_value, str):
             state_node = parent.states.get(state_value, None)
