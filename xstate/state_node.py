@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import Dict, TYPE_CHECKING, Optional, Union
+from typing import Dict, TYPE_CHECKING, Optional, Union, List
 
 from xstate.transition import Transition
+from xstate.action import Action
 
 if TYPE_CHECKING:
     from xstate.machine import Machine
@@ -12,6 +13,9 @@ class StateNode:
     machine: Machine
     parent: Union[StateNode, Machine]
     initial: Optional[Transition]
+    entry: List[Action]
+    exit: List[Action]
+    donedata: Optional[Dict]
 
     def __init__(
         self,

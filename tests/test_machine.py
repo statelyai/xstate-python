@@ -26,6 +26,6 @@ def test_machine():
     print([item.id for item in lights._get_configuration({"red": "walk"})])
 
     assert (
-        Machine(example).transition(State("bar", {"foo": "bar"}), "TOUCH")[0].id
-        == "machine.foo.baz"
+        lights.transition(State("green", {}), "TIMER")[0].id
+        == "lights.yellow"
     )
