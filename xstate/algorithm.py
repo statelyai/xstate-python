@@ -11,6 +11,7 @@ def is_final_state(state_node: StateNode) -> bool:
     return False
 
 def is_parallel_state(state_node: StateNode) -> bool:
+    # should return whether state_node.type is parallel
     return False
 
 def get_child_states(state_node: StateNode) -> List[StateNode]:
@@ -43,8 +44,10 @@ def enter_states(enabled_transitions: List[Transition], configuration: set, stat
                 actions.append(action)
         if s in states_for_default_entry:
             # executeContent(s.initial.transition)
+            continue
         if default_history_content.get(s.id, None) is not None:
             # executeContent(defaultHistoryContent[s.id]) 
+            continue
         if is_final_state(s):
             parent = s.parent
             grandparent = parent.parent
