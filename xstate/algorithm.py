@@ -14,8 +14,8 @@ def is_parallel_state(state_node: StateNode) -> bool:
     # should return whether state_node.type is parallel
     if state_node.type == 'parallel':
         return True
-    elif state_node.type =='atomic':
-        return not True
+    else:
+        return False
 
 def get_child_states(state_node: StateNode) -> List[StateNode]:
     return []
