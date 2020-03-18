@@ -8,6 +8,8 @@ if TYPE_CHECKING:
 class Transition:
     event: str
     source: StateNode
+    # "internal" or "external"
+    type: str
 
     def __init__(self, config, source, event: str):
         self.event = event

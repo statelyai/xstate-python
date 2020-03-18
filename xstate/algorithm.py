@@ -1,4 +1,4 @@
-from typing import List, Set, Dict
+from typing import List, Set, Dict, Optional
 from xstate.transition import Transition
 from xstate.state_node import StateNode
 from xstate.action import Action
@@ -54,7 +54,7 @@ def add_descendent_states_to_enter(
                     history_value=history_value,
                 )
         else:
-            # default_history_content[state.parent.id] = state.transition.content
+            default_history_content[state.parent.id] = state.transition.content
             # for s in state.transition.target:
             #     add_descendent_states_to_enter(
             #         s,
@@ -107,34 +107,73 @@ def add_descendent_states_to_enter(
 
 
 def is_history_state(state: StateNode) -> bool:
-    pass
+    return state.type == "history"
 
 
 def is_compound_state(state: StateNode) -> bool:
-    pass
+    return state.type == "compound"
 
 
-def is_descendent(state: StateNode, child: StateNode) -> bool:
-    pass
+def is_descendent(state: StateNode, state2: StateNode) -> bool:
+    marker = state
+
+    while marker.parent and marker.parent != state2:
+        marker = marker.parent
+
+    return marker.parent == state2
 
 
-def add_descendent_states_to_enter(
-    s: StateNode,
-    states_to_enter: Set[StateNode],
-    states_for_default_entry: Set[StateNode],
-    default_history_content: Dict,
-):
-    pass
-
-
+# function getTransitionDomain(t)
+#     tstates = getEffectiveTargetStates(t)
+#     if not tstates:
+#         return null
+#     elif t.type == "internal" and isCompoundState(t.source) and tstates.every(lambda s: isDescendant(s,t.source)):
+#         return t.source
+#     else:
+#         return findLCCA([t.source].append(tstates))
 def get_transition_domain(transition: Transition) -> StateNode:
-    pass
+    tstates = get_effective_target_states(transition)
+    if not tstates:
+        return None
+    elif (
+        transition.type == "internal"
+        and is_compound_state(transition.source)
+        and all([is_descendent(s, state2=transition.source) for s in tstates])
+    ):
+        return transition.source
+    else:
+        return find_lcca([transition.source] + tstates)
 
 
-def get_effective_target_states(transition: Transition) -> Set[StateNode]:
-    pass
+def find_lcca(state_list: List[StateNode]):
+    for anc in get_proper_ancestors(state_list[0], ancestor=None):
+        if all([is_descendent(s, state2=anc) for s in state_list[1:]]):
+            return anc
 
 
+def get_effective_target_states(
+    transition: Transition, history_value: Dict[str, Set[StateNode]]
+) -> Set[StateNode]:
+    targets: Set[StateNode] = set()
+    for s in transition.target:
+        if is_history_state(s):
+            if history_value.get(s.id):
+                targets.update(history_value.get(s.id))
+            else:
+                targets.update(get_effective_target_states(s.transition))
+        else:
+            targets.add(s)
+
+    return targets
+
+
+# procedure addAncestorStatesToEnter(state, ancestor, statesToEnter, statesForDefaultEntry, defaultHistoryContent)
+#     for anc in getProperAncestors(state,ancestor):
+#         statesToEnter.add(anc)
+#         if isParallelState(anc):
+#             for child in getChildStates(anc):
+#                 if not statesToEnter.some(lambda s: isDescendant(s,child)):
+#                     addDescendantStatesToEnter(child,statesToEnter,statesForDefaultEntry, defaultHistoryContent)
 def add_ancestor_states_to_enter(
     state_node: StateNode,
     ancestor: StateNode,
@@ -143,11 +182,27 @@ def add_ancestor_states_to_enter(
     default_history_content: Dict,
     history_value: Dict[str, Set[StateNode]],
 ):
+    for anc in get_proper_ancestors(state, ancestor=ancestor):
+        states_to_enter.add(anc)
+        if is_parallel_state(anc):
+            for child in get_child_states(anc):
+                if not any([is_descendent(s, state2=child) for s in states_to_enter]):
+                    add_descendent_states_to_enter(
+                        child,
+                        states_to_enter=states_to_enter,
+                        states_for_default_entry=states_for_default_entry,
+                        default_history_content=default_history_content,
+                    )
+
+
+def get_proper_ancestors(
+    state: StateNode, ancestor: Optional[StateNode]
+) -> Set[StateNode]:
     pass
 
 
 def is_final_state(state_node: StateNode) -> bool:
-    return False
+    return state_node.type == "final"
 
 
 def is_parallel_state(state_node: StateNode) -> bool:
@@ -159,11 +214,21 @@ def is_parallel_state(state_node: StateNode) -> bool:
 
 
 def get_child_states(state_node: StateNode) -> List[StateNode]:
-    return []
+    return [state_node.states.get(key) for key in state_node.states.keys()]
 
 
-def is_in_final_state(state_node: StateNode) -> bool:
-    pass
+def is_in_final_state(state: StateNode, configuration: Set[StateNode]) -> bool:
+    if is_compound_state(state):
+        return any(
+            [
+                is_final_state(s) and (s in configuration)
+                for s in get_child_states(state)
+            ]
+        )
+    elif is_parallel_state(state):
+        return all(is_in_final_state(s) for s in get_child_states(state))
+    else:
+        return False
 
 
 def enter_states(
