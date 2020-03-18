@@ -12,7 +12,10 @@ def is_final_state(state_node: StateNode) -> bool:
 
 def is_parallel_state(state_node: StateNode) -> bool:
     # should return whether state_node.type is parallel
-    return False
+    if state_node.type == 'parallel':
+        return True
+    elif state_node.type =='atomic':
+        return not True
 
 def get_child_states(state_node: StateNode) -> List[StateNode]:
     return []
