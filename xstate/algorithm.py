@@ -24,13 +24,14 @@ def compute_entry_set(
                 history_value=history_value,
             )
         ancestor = get_transition_domain(t, history_value=history_value)
-        for s in get_effective_target_states(t):
+        for s in get_effective_target_states(t, history_value=history_value):
             add_ancestor_states_to_enter(
                 s,
                 ancestor=ancestor,
                 states_to_enter=states_to_enter,
                 states_for_default_entry=states_for_default_entry,
                 default_history_content=default_history_content,
+                history_value=history_value
             )
 
 
@@ -151,7 +152,7 @@ def get_transition_domain(
     ):
         return transition.source
     else:
-        return find_lcca([transition.source] + tstates)
+        return find_lcca([transition.source] + list(tstates))
 
 
 def find_lcca(state_list: List[StateNode]):
@@ -169,7 +170,7 @@ def get_effective_target_states(
             if history_value.get(s.id):
                 targets.update(history_value.get(s.id))
             else:
-                targets.update(get_effective_target_states(s.transition))
+                targets.update(get_effective_target_states(s.transition, history_value=history_value))
         else:
             targets.add(s)
 
@@ -184,7 +185,7 @@ def get_effective_target_states(
 #                 if not statesToEnter.some(lambda s: isDescendant(s,child)):
 #                     addDescendantStatesToEnter(child,statesToEnter,statesForDefaultEntry, defaultHistoryContent)
 def add_ancestor_states_to_enter(
-    state_node: StateNode,
+    state: StateNode,
     ancestor: StateNode,
     states_to_enter: Set[StateNode],
     states_for_default_entry: Set[StateNode],
@@ -201,13 +202,15 @@ def add_ancestor_states_to_enter(
                         states_to_enter=states_to_enter,
                         states_for_default_entry=states_for_default_entry,
                         default_history_content=default_history_content,
+                        history_value=history_value
                     )
 
 
 def get_proper_ancestors(
     state: StateNode, ancestor: Optional[StateNode]
 ) -> Set[StateNode]:
-    pass
+    # this should be a set.... I forgot to return anything
+    return set()
 
 
 def is_final_state(state_node: StateNode) -> bool:
@@ -235,7 +238,7 @@ def is_in_final_state(state: StateNode, configuration: Set[StateNode]) -> bool:
             ]
         )
     elif is_parallel_state(state):
-        return all(is_in_final_state(s) for s in get_child_states(state))
+        return all(is_in_final_state(s, configuration) for s in get_child_states(state))
     else:
         return False
 
@@ -261,7 +264,8 @@ def enter_states(
         history_value=history_value,
     )
 
-    for s in list(states_to_enter).sort():
+    # TODO: sort
+    for s in list(states_to_enter):
         configuration.add(s)
         states_to_invoke.add(s)
 
@@ -269,7 +273,8 @@ def enter_states(
         #     initializeDataModel(datamodel.s,doc.s)
         #     s.isFirstEntry = false
 
-        for content in s.entry.sort():
+        # TODO: sort
+        for actions in s.entry:
             # do not execute; add to actions
             for action in actions:
                 actions.append(action)
@@ -286,7 +291,7 @@ def enter_states(
 
             if is_parallel_state(grandparent):
                 if all(
-                    is_in_final_state(parent_state)
+                    is_in_final_state(parent_state, configuration)
                     for parent_state in get_child_states(grandparent)
                 ):
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
