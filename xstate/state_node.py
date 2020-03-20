@@ -20,6 +20,7 @@ class StateNode:
 
     def __init__(
         self,
+        # { "type": "compound", "states": { ... } }
         config,
         machine: Machine,
         key: str,
@@ -27,6 +28,8 @@ class StateNode:
     ):
         self.parent = parent
         self.id = config.get("id", parent.id + "." + key)
+        self.entry = []
+        self.exit = []
 
         self.key = key
         self.states = {

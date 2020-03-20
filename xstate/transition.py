@@ -15,6 +15,7 @@ class Transition:
         self.event = event
         self.config = config if not isinstance(config, str) else {"target": [config]}
         self.source = source
+        self.type = "external"
 
     @property
     def target(self) -> List[StateNode]:
