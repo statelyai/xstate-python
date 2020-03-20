@@ -22,10 +22,8 @@ lights = Machine(
 
 
 def test_machine():
-    print([target.id for target in lights.root.initial.target])
-    print([item.id for item in lights._get_configuration({"red": "walk"})])
+    assert lights.transition(State("green", {}), "TIMER")[0].id == "lights.yellow"
 
-    assert (
-        lights.transition(State("green", {}), "TIMER")[0].id
-        == "lights.yellow"
-    )
+
+def test_machine_initial_state():
+    print(lights.initial_state())

@@ -11,7 +11,7 @@ class Transition:
     # "internal" or "external"
     type: str
 
-    def __init__(self, config, source, event: str):
+    def __init__(self, config, source: StateNode, event: str):
         self.event = event
         self.config = config if not isinstance(config, str) else {"target": [config]}
         self.source = source

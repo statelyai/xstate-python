@@ -10,20 +10,25 @@ def compute_entry_set(
     states_to_enter: Set[StateNode],
     states_for_default_entry: Set[StateNode],
     default_history_content: Dict,
+    history_value: Dict[str, Set[StateNode]],
 ):
     for t in transitions:
         for s in t.target:
             add_descendent_states_to_enter(
-                s, states_to_enter, states_for_default_entry, default_history_content
+                s,
+                states_to_enter=states_to_enter,
+                states_for_default_entry=states_for_default_entry,
+                default_history_content=default_history_content,
+                history_value=history_value,
             )
         ancestor = get_transition_domain(t)
         for s in get_effective_target_states(t):
             add_ancestor_states_to_enter(
                 s,
-                ancestor,
-                states_to_enter,
-                states_for_default_entry,
-                default_history_content,
+                ancestor=ancestor,
+                states_to_enter=states_to_enter,
+                states_for_default_entry=states_for_default_entry,
+                default_history_content=default_history_content,
             )
 
 
@@ -232,7 +237,10 @@ def is_in_final_state(state: StateNode, configuration: Set[StateNode]) -> bool:
 
 
 def enter_states(
-    enabled_transitions: List[Transition], configuration: set, states_to_invoke: set
+    enabled_transitions: List[Transition],
+    configuration: Set[StateNode],
+    states_to_invoke: Set[StateNode],
+    history_value: Dict[str, Set[StateNode]],
 ):
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
@@ -243,9 +251,10 @@ def enter_states(
 
     compute_entry_set(
         enabled_transitions,
-        states_to_enter,
-        states_for_default_entry,
-        default_history_content,
+        states_to_enter=states_to_enter,
+        states_for_default_entry=states_for_default_entry,
+        default_history_content=default_history_content,
+        history_value=history_value,
     )
 
     for s in list(states_to_enter).sort():
@@ -277,6 +286,8 @@ def enter_states(
                     for parent_state in get_child_states(grandparent)
                 ):
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
+
+    return (configuration,)
 
 
 # procedure enterStates(enabledTransitions):

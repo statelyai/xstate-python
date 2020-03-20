@@ -1,6 +1,7 @@
 from typing import Dict, List
 from xstate.state_node import StateNode
 from xstate.state import State
+from xstate.algorithm import enter_states
 
 
 class Machine:
@@ -58,4 +59,14 @@ class Machine:
             )
 
         return configuration
+
+    def initial_state(self):
+        (configuration,) = enter_states(
+            [self.root.initial],
+            configuration=set(),
+            states_to_invoke=set(),
+            history_value={},
+        )
+
+        print(configuration)
 
