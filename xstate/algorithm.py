@@ -4,13 +4,15 @@ from xstate.state_node import StateNode
 from xstate.action import Action
 from xstate.event import Event
 
+HistoryValue = Dict[str, Set[StateNode]]
+
 
 def compute_entry_set(
     transitions: List[Transition],
     states_to_enter: Set[StateNode],
     states_for_default_entry: Set[StateNode],
     default_history_content: Dict,
-    history_value: Dict[str, Set[StateNode]],
+    history_value: HistoryValue,
 ):
     for t in transitions:
         for s in t.target:
@@ -21,7 +23,7 @@ def compute_entry_set(
                 default_history_content=default_history_content,
                 history_value=history_value,
             )
-        ancestor = get_transition_domain(t)
+        ancestor = get_transition_domain(t, history_value=history_value)
         for s in get_effective_target_states(t):
             add_ancestor_states_to_enter(
                 s,
@@ -37,7 +39,7 @@ def add_descendent_states_to_enter(
     states_to_enter: Set[StateNode],
     states_for_default_entry: Set[StateNode],
     default_history_content: Dict,
-    history_value: Dict[str, Set[StateNode]],
+    history_value: HistoryValue,
 ):
     if is_history_state(state):
         if history_value.get(state.id):
@@ -136,8 +138,10 @@ def is_descendent(state: StateNode, state2: StateNode) -> bool:
 #         return t.source
 #     else:
 #         return findLCCA([t.source].append(tstates))
-def get_transition_domain(transition: Transition) -> StateNode:
-    tstates = get_effective_target_states(transition)
+def get_transition_domain(
+    transition: Transition, history_value: HistoryValue
+) -> StateNode:
+    tstates = get_effective_target_states(transition, history_value=history_value)
     if not tstates:
         return None
     elif (
@@ -157,7 +161,7 @@ def find_lcca(state_list: List[StateNode]):
 
 
 def get_effective_target_states(
-    transition: Transition, history_value: Dict[str, Set[StateNode]]
+    transition: Transition, history_value: HistoryValue
 ) -> Set[StateNode]:
     targets: Set[StateNode] = set()
     for s in transition.target:
@@ -185,7 +189,7 @@ def add_ancestor_states_to_enter(
     states_to_enter: Set[StateNode],
     states_for_default_entry: Set[StateNode],
     default_history_content: Dict,
-    history_value: Dict[str, Set[StateNode]],
+    history_value: HistoryValue,
 ):
     for anc in get_proper_ancestors(state, ancestor=ancestor):
         states_to_enter.add(anc)
@@ -240,7 +244,7 @@ def enter_states(
     enabled_transitions: List[Transition],
     configuration: Set[StateNode],
     states_to_invoke: Set[StateNode],
-    history_value: Dict[str, Set[StateNode]],
+    history_value: HistoryValue,
 ):
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
