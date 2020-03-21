@@ -8,6 +8,7 @@ from xstate.action import Action
 if TYPE_CHECKING:
     from xstate.machine import Machine
 
+
 class StateNode:
     on: Dict[str, Transition]
     machine: Machine
@@ -16,7 +17,7 @@ class StateNode:
     entry: List[Action]
     exit: List[Action]
     donedata: Optional[Dict]
-    type: str # 'atomic' or 'compound' or 'parallel' or 'final'
+    type: str  # 'atomic' or 'compound' or 'parallel' or 'final'
 
     def __init__(
         self,
@@ -40,16 +41,19 @@ class StateNode:
             k: Transition(v, source=self, event=k)
             for k, v in config.get("on", {}).items()
         }
-        self.initial = (
-            None
-            if config.get("initial", None) is None
-            else Transition(config.get("initial"), source=self, event=None)
-        )
+        initial_key = config.get("initial")
 
-        self.type = config.get('type')
+        if not initial_key:
+            self.initial = None
+        else:
+            self.initial = Transition(
+                self.states.get(initial_key), source=self, event=None
+            )
+
+        self.type = config.get("type")
 
         if self.type is None:
-            self.type = 'atomic' if not self.states else 'compound'
+            self.type = "atomic" if not self.states else "compound"
 
         machine._register(self)
 
@@ -57,4 +61,11 @@ class StateNode:
         if target.startswith("#"):
             return self.machine._get_by_id(target[1:])
 
-        return self.parent.states.get(target, None)
+        state_node = self.parent.states.get(target)
+
+        if not state_node:
+            raise ValueError(
+                f"Relative state node '{target}' does not exist on state node '#{self.id}'"
+            )
+
+        return state_node

@@ -68,5 +68,5 @@ class Machine:
             history_value={},
         )
 
-        print(configuration)
+        return configuration
 

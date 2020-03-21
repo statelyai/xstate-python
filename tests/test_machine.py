@@ -13,7 +13,11 @@ lights = Machine(
         "id": "lights",
         "initial": "green",
         "states": {
-            "green": {"on": {"TIMER": "yellow"}},
+            "green": {
+                "initial": "first",
+                "states": {"first": {}},
+                "on": {"TIMER": "yellow"},
+            },
             "yellow": {"on": {"TIMER": "red"}},
             "red": {"states": {"walk": {}, "wait": {}, "stop": {}}},
         },
@@ -26,4 +30,4 @@ def test_machine():
 
 
 def test_machine_initial_state():
-    print(lights.initial_state())
+    print([c.id for c in lights.initial_state()])

@@ -31,7 +31,7 @@ def compute_entry_set(
                 states_to_enter=states_to_enter,
                 states_for_default_entry=states_for_default_entry,
                 default_history_content=default_history_content,
-                history_value=history_value
+                history_value=history_value,
             )
 
 
@@ -170,7 +170,11 @@ def get_effective_target_states(
             if history_value.get(s.id):
                 targets.update(history_value.get(s.id))
             else:
-                targets.update(get_effective_target_states(s.transition, history_value=history_value))
+                targets.update(
+                    get_effective_target_states(
+                        s.transition, history_value=history_value
+                    )
+                )
         else:
             targets.add(s)
 
@@ -202,7 +206,7 @@ def add_ancestor_states_to_enter(
                         states_to_enter=states_to_enter,
                         states_for_default_entry=states_for_default_entry,
                         default_history_content=default_history_content,
-                        history_value=history_value
+                        history_value=history_value,
                     )
 
 
@@ -248,7 +252,7 @@ def enter_states(
     configuration: Set[StateNode],
     states_to_invoke: Set[StateNode],
     history_value: HistoryValue,
-):
+) -> (Set[StateNode],):
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
     actions: List[Action] = []
