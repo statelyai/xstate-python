@@ -28,7 +28,11 @@ class StateNode:
         parent: Union[StateNode, Machine] = None,
     ):
         self.parent = parent
-        self.id = config.get("id", parent.id + "." + key)
+        self.id = (
+            config.get("id", parent.id + "." + key)
+            if parent
+            else config.get("id", machine.id + "." + key)
+        )
         self.entry = []
         self.exit = []
 

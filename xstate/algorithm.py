@@ -156,7 +156,7 @@ def get_transition_domain(
 
 
 def find_lcca(state_list: List[StateNode]):
-    for anc in get_proper_ancestors(state_list[0], ancestor=None):
+    for anc in get_proper_ancestors(state_list[0], state2=None):
         if all([is_descendent(s, state2=anc) for s in state_list[1:]]):
             return anc
 
@@ -196,7 +196,7 @@ def add_ancestor_states_to_enter(
     default_history_content: Dict,
     history_value: HistoryValue,
 ):
-    for anc in get_proper_ancestors(state, ancestor=ancestor):
+    for anc in get_proper_ancestors(state, state2=ancestor):
         states_to_enter.add(anc)
         if is_parallel_state(anc):
             for child in get_child_states(anc):
@@ -211,10 +211,15 @@ def add_ancestor_states_to_enter(
 
 
 def get_proper_ancestors(
-    state: StateNode, ancestor: Optional[StateNode]
+    state1: StateNode, state2: Optional[StateNode]
 ) -> Set[StateNode]:
-    # this should be a set.... I forgot to return anything
-    return set()
+    ancestors: Set[StateNode] = set()
+    marker = state1.parent
+    while marker and marker != state2:
+        ancestors.add(marker)
+        marker = marker.parent
+
+    return ancestors
 
 
 def is_final_state(state_node: StateNode) -> bool:
@@ -301,33 +306,3 @@ def enter_states(
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
 
     return (configuration,)
-
-
-# procedure enterStates(enabledTransitions):
-#     statesToEnter = new OrderedSet()
-#     statesForDefaultEntry = new OrderedSet()
-#     // initialize the temporary table for default content in history states
-#     defaultHistoryContent = new HashTable()
-#     computeEntrySet(enabledTransitions, statesToEnter, statesForDefaultEntry, defaultHistoryContent)
-#     for s in statesToEnter.toList().sort(entryOrder):
-#         configuration.add(s)
-#         statesToInvoke.add(s)
-#         if binding == "late" and s.isFirstEntry:
-#             initializeDataModel(datamodel.s,doc.s)
-#             s.isFirstEntry = false
-#         for content in s.onentry.sort(documentOrder):
-#             executeContent(content)
-#         if statesForDefaultEntry.isMember(s):
-#             executeContent(s.initial.transition)
-#         if defaultHistoryContent[s.id]:
-#             executeContent(defaultHistoryContent[s.id])
-#         if isFinalState(s):
-#             if isSCXMLElement(s.parent):
-#                 running = false
-#             else:
-#                 parent = s.parent
-#                 grandparent = parent.parent
-#                 internalQueue.enqueue(new Event("done.state." + parent.id, s.donedata))
-#                 if isParallelState(grandparent):
-#                     if getChildStates(grandparent).every(isInFinalState):
-#                         internalQueue.enqueue(new Event("done.state." + grandparent.id))

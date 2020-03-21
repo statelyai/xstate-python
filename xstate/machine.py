@@ -12,7 +12,7 @@ class Machine:
         self.id = config["id"]
         self._id_map = {}
         self.root = StateNode(
-            config, machine=self, key=config.get("id", "(machine)"), parent=self
+            config, machine=self, key=config.get("id", "(machine)"), parent=None
         )
         self.states = self.root.states
 
