@@ -122,6 +122,10 @@ def is_compound_state(state: StateNode) -> bool:
     return state.type == "compound"
 
 
+def is_atomic_state(state: StateNode) -> bool:
+    return state.type == "atomic" or state.type == "final" or state.type == "history"
+
+
 def is_descendent(state: StateNode, state2: StateNode) -> bool:
     marker = state
 
@@ -257,7 +261,7 @@ def enter_states(
     configuration: Set[StateNode],
     states_to_invoke: Set[StateNode],
     history_value: HistoryValue,
-) -> (Set[StateNode],):
+) -> (Set[StateNode], List[Action]):
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
     actions: List[Action] = []
@@ -283,10 +287,9 @@ def enter_states(
         #     s.isFirstEntry = false
 
         # TODO: sort
-        for actions in s.entry:
+        for action in s.entry:
             # do not execute; add to actions
-            for action in actions:
-                actions.append(action)
+            actions.append(action)
         if s in states_for_default_entry:
             # executeContent(s.initial.transition)
             continue
@@ -305,4 +308,47 @@ def enter_states(
                 ):
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
 
-    return (configuration,)
+    return (configuration, actions)
+
+
+# ===================
+
+
+def get_adj_list(configuration: Set[StateNode]) -> Dict[str, Set[StateNode]]:
+    adj_list: Dict[str, Set[StateNode]] = {}
+
+    for s in configuration:
+        if not adj_list.get(s.id):
+            adj_list[s.id] = set()
+
+        if s.parent:
+            if not adj_list.get(s.parent.id):
+                adj_list[s.parent.id] = set()
+
+            adj_list.get(s.parent.id).add(s)
+
+    return adj_list
+
+
+def get_state_value(state_node: StateNode, configuration: Set[StateNode]):
+    return get_value_from_adj(state_node, get_adj_list(configuration))
+
+
+def get_value_from_adj(state_node: StateNode, adj_list: Dict[str, Set[StateNode]]):
+    child_state_nodes = adj_list.get(state_node.id)
+
+    if is_compound_state(state_node):
+        child_state_node = list(child_state_nodes)[0]
+
+        if child_state_node:
+            if is_atomic_state(child_state_node):
+                return child_state_node.key
+        else:
+            return {}
+
+    state_value = {}
+
+    for s in child_state_nodes:
+        state_value[s.key] = get_value_from_adj(s, adj_list)
+
+    return state_value

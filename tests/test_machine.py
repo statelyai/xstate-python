@@ -14,6 +14,7 @@ lights = Machine(
         "initial": "green",
         "states": {
             "green": {
+                "entry": [{"type": "firstAction"}],
                 "initial": "first",
                 "states": {"first": {}},
                 "on": {"TIMER": "yellow"},
@@ -30,4 +31,7 @@ def test_machine():
 
 
 def test_machine_initial_state():
-    print([c.id for c in lights.initial_state()])
+    state = lights.initial_state()
+
+    print(repr(state))
+

@@ -33,7 +33,11 @@ class StateNode:
             if parent
             else config.get("id", machine.id + "." + key)
         )
-        self.entry = []
+        self.entry = (
+            [Action(entry_action.get("type")) for entry_action in config.get("entry")]
+            if config.get("entry")
+            else []
+        )
         self.exit = []
 
         self.key = key

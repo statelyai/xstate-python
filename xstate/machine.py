@@ -1,7 +1,7 @@
 from typing import Dict, List
 from xstate.state_node import StateNode
 from xstate.state import State
-from xstate.algorithm import enter_states
+from xstate.algorithm import enter_states, get_state_value
 
 
 class Machine:
@@ -60,13 +60,15 @@ class Machine:
 
         return configuration
 
-    def initial_state(self):
-        (configuration,) = enter_states(
+    def initial_state(self) -> State:
+        (configuration, actions) = enter_states(
             [self.root.initial],
             configuration=set(),
             states_to_invoke=set(),
             history_value={},
         )
 
-        return configuration
+        return State(get_state_value(self.root, configuration), {}, actions=actions)
+
+        # return (configuration, actions, get_state_value(self.root, configuration))
 
