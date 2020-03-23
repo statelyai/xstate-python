@@ -1,7 +1,8 @@
 from typing import Dict, List
 from xstate.state_node import StateNode
 from xstate.state import State
-from xstate.algorithm import enter_states, get_state_value
+from xstate.algorithm import enter_states, get_state_value, main_event_loop
+from xstate.event import Event
 
 
 class Machine:
@@ -17,6 +18,8 @@ class Machine:
         self.states = self.root.states
 
     def transition(self, state: State, event: str):
+        (configuration, actions) = main_event_loop(self, state, Event(event))
+
         state_node = self.root.states.get(state.value, None)
 
         if state_node is None:
@@ -66,9 +69,9 @@ class Machine:
             configuration=set(),
             states_to_invoke=set(),
             history_value={},
+            actions=[],
         )
 
         return State(get_state_value(self.root, configuration), {}, actions=actions)
 
         # return (configuration, actions, get_state_value(self.root, configuration))
-

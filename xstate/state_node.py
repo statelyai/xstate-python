@@ -18,6 +18,7 @@ class StateNode:
     exit: List[Action]
     donedata: Optional[Dict]
     type: str  # 'atomic' or 'compound' or 'parallel' or 'final'
+    transitions: List[Transition]
 
     def __init__(
         self,
@@ -45,10 +46,13 @@ class StateNode:
             k: StateNode(v, machine=machine, parent=self, key=k)
             for k, v in config.get("states", {}).items()
         }
-        self.on = {
-            k: Transition(v, source=self, event=k)
-            for k, v in config.get("on", {}).items()
-        }
+        self.on = {}
+        self.transitions = []
+        for k, v in config.get("on", {}).items():
+            transition = Transition(v, source=self, event=k)
+            self.on[k] = transition
+            self.transitions.append(transition)
+
         initial_key = config.get("initial")
 
         if not initial_key:

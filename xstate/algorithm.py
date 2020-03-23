@@ -1,8 +1,13 @@
-from typing import List, Set, Dict, Optional
+from __future__ import annotations
+from typing import List, Set, Dict, Optional, Union, TYPE_CHECKING
 from xstate.transition import Transition
 from xstate.state_node import StateNode
 from xstate.action import Action
 from xstate.event import Event
+from xstate.state import State
+
+if TYPE_CHECKING:
+    from xstate.machine import Machine
 
 HistoryValue = Dict[str, Set[StateNode]]
 
@@ -261,10 +266,10 @@ def enter_states(
     configuration: Set[StateNode],
     states_to_invoke: Set[StateNode],
     history_value: HistoryValue,
+    actions: List[Action],
 ) -> (Set[StateNode], List[Action]):
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
-    actions: List[Action] = []
     internal_queue: List[Event] = []
 
     default_history_content = {}
@@ -308,10 +313,133 @@ def enter_states(
                 ):
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
 
+    return (
+        configuration,
+        actions,
+    )
+
+
+def exit_states(
+    enabled_transitions: List[Transition],
+    configuration: Set[StateNode],
+    states_to_invoke: Set[StateNode],
+    history_value: HistoryValue,
+    actions: List[Action],
+):
+    states_to_exit = compute_exit_set(enabled_transitions)
+    for s in states_to_exit:
+        states_to_invoke.remove(s)
+    #     statesToExit = statesToExit.toList().sort(exitOrder)
+    # for s in states_to_exit:
+    #     for h in s.history
+    for s in states_to_exit:
+        for action in s.exit:
+            actions.append(action)
+        # for inv in s.invoke:
+        #     cancelInvoke(inv)
+        configuration.remove(s)
+
+    return (
+        configuration,
+        actions,
+    )
+
+
+def compute_exit_set(enabled_transitions: List[Transition]) -> Set[StateNode]:
+    return set()
+
+
+def name_match(event: str, specific_event: str) -> bool:
+    return event == specific_event
+
+
+def condition_match(transition: Transition) -> bool:
+    return True
+
+
+def select_transitions(
+    machine: Machine, state: State, event: Event, configuration: Set[StateNode]
+):
+
+    enabled_transitions: Set[Transition] = set()
+    atomic_states = filter(is_atomic_state, configuration)
+    test = False
+    for state in atomic_states:
+        if test:
+            break
+        for s in [state] + get_proper_ancestors(state, None):
+            for t in s.transitions:
+                if t.event and name_match(t.event, event.name) and condition_match(t):
+                    enabled_transitions.add(t)
+                    test = True
+
+    return enabled_transitions
+
+
+def main_event_loop(machine: Machine, state: State, event: Event) -> State:
+    configuration = get_configuration_from_state(machine.root, state.value, set())
+    states_to_invoke: Set[StateNode] = set()
+    history_value = {}
+    enabled_transitions = select_transitions(
+        machine=machine, state=state, event=event, configuration=configuration
+    )
+
+    (configuration, actions) = microstep(
+        enabled_transitions,
+        configuration=configuration,
+        states_to_invoke=states_to_invoke,
+        history_value=history_value,
+    )
+
+    return (configuration, actions)
+
+
+def microstep(
+    enabled_transitions: List[Transition],
+    configuration: Set[StateNode],
+    states_to_invoke: Set[StateNode],
+    history_value: HistoryValue,
+):
+    actions: List[Action] = []
+
+    exit_states(
+        enabled_transitions,
+        configuration=configuration,
+        states_to_invoke=states_to_invoke,
+        history_value=history_value,
+        actions=actions,
+    )
+    # execute transition content
+    enter_states(
+        enabled_transitions,
+        configuration=configuration,
+        states_to_invoke=states_to_invoke,
+        history_value=history_value,
+        actions=actions,
+    )
+
     return (configuration, actions)
 
 
 # ===================
+
+
+def get_configuration_from_state(
+    from_node: StateNode,
+    state_value: Union[Dict, str],
+    partial_configuration: Set[StateNode],
+) -> Set[StateNode]:
+    if isinstance(state_value, str):
+        partial_configuration.add(from_node.states.get(state_value))
+    else:
+        for key in state_value.keys:
+            node = get_configuration_from_state(from_node.states.get(key))
+            partial_configuration.add(node)
+            get_configuration_from_state(
+                node, state_value.get(key), partial_configuration
+            )
+
+    return partial_configuration
 
 
 def get_adj_list(configuration: Set[StateNode]) -> Dict[str, Set[StateNode]]:
