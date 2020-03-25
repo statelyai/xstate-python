@@ -20,17 +20,9 @@ class Machine:
     def transition(self, state: State, event: str):
         (configuration, actions) = main_event_loop(self, state, Event(event))
 
-        state_node = self.root.states.get(state.value, None)
+        value = get_state_value(self.root, configuration=configuration)
 
-        if state_node is None:
-            raise ValueError("nope")
-
-        transition = state_node.on.get(event, None)
-
-        if transition is None:
-            raise ValueError("transition does not exist")
-
-        return transition.target
+        return State(value, context={}, actions=actions)
 
     def _register(self, state_node: StateNode):
         state_node.machine = self
@@ -63,6 +55,7 @@ class Machine:
 
         return configuration
 
+    @property
     def initial_state(self) -> State:
         (configuration, actions) = enter_states(
             [self.root.initial],
@@ -73,5 +66,3 @@ class Machine:
         )
 
         return State(get_state_value(self.root, configuration), {}, actions=actions)
-
-        # return (configuration, actions, get_state_value(self.root, configuration))

@@ -326,9 +326,11 @@ def exit_states(
     history_value: HistoryValue,
     actions: List[Action],
 ):
-    states_to_exit = compute_exit_set(enabled_transitions)
+    states_to_exit = compute_exit_set(
+        enabled_transitions, configuration=configuration, history_value=history_value
+    )
     for s in states_to_exit:
-        states_to_invoke.remove(s)
+        states_to_invoke.discard(s)
     #     statesToExit = statesToExit.toList().sort(exitOrder)
     # for s in states_to_exit:
     #     for h in s.history
@@ -345,8 +347,20 @@ def exit_states(
     )
 
 
-def compute_exit_set(enabled_transitions: List[Transition]) -> Set[StateNode]:
-    return set()
+def compute_exit_set(
+    enabled_transitions: List[Transition],
+    configuration: Set[StateNode],
+    history_value: HistoryValue,
+) -> Set[StateNode]:
+    states_to_exit: Set[StateNode] = set()
+    for t in enabled_transitions:
+        if t.target:
+            domain = get_transition_domain(t, history_value=history_value)
+            for s in configuration:
+                if is_descendent(s, state2=domain):
+                    states_to_exit.add(s)
+
+    return states_to_exit
 
 
 def name_match(event: str, specific_event: str) -> bool:
@@ -360,14 +374,13 @@ def condition_match(transition: Transition) -> bool:
 def select_transitions(
     machine: Machine, state: State, event: Event, configuration: Set[StateNode]
 ):
-
     enabled_transitions: Set[Transition] = set()
     atomic_states = filter(is_atomic_state, configuration)
     test = False
     for state in atomic_states:
         if test:
             break
-        for s in [state] + get_proper_ancestors(state, None):
+        for s in [state] + list(get_proper_ancestors(state, None)):
             for t in s.transitions:
                 if t.event and name_match(t.event, event.name) and condition_match(t):
                     enabled_transitions.add(t)
@@ -432,8 +445,8 @@ def get_configuration_from_state(
     if isinstance(state_value, str):
         partial_configuration.add(from_node.states.get(state_value))
     else:
-        for key in state_value.keys:
-            node = get_configuration_from_state(from_node.states.get(key))
+        for key in state_value.keys():
+            node = from_node.states.get(key)
             partial_configuration.add(node)
             get_configuration_from_state(
                 node, state_value.get(key), partial_configuration

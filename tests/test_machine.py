@@ -27,11 +27,10 @@ lights = Machine(
 
 
 def test_machine():
-    assert lights.transition(State("green", {}), "TIMER")[0].id == "lights.yellow"
+    assert lights.transition(lights.initial_state, "TIMER").value == "yellow"
 
 
 def test_machine_initial_state():
-    state = lights.initial_state()
+    state = lights.initial_state
 
-    print(repr(state))
-
+    assert lights.initial_state.value == {"green": "first"}
