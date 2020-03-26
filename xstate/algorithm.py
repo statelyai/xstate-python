@@ -267,10 +267,10 @@ def enter_states(
     states_to_invoke: Set[StateNode],
     history_value: HistoryValue,
     actions: List[Action],
-) -> (Set[StateNode], List[Action]):
+    internal_queue: List[Event],
+) -> (Set[StateNode], List[Action], List[Event]):
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
-    internal_queue: List[Event] = []
 
     default_history_content = {}
 
@@ -313,10 +313,7 @@ def enter_states(
                 ):
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
 
-    return (
-        configuration,
-        actions,
-    )
+    return (configuration, actions, internal_queue)
 
 
 def exit_states(
@@ -377,16 +374,43 @@ def select_transitions(
     enabled_transitions: Set[Transition] = set()
     atomic_states = filter(is_atomic_state, configuration)
     test = False
-    for state in atomic_states:
+    for state_node in atomic_states:
         if test:
             break
-        for s in [state] + list(get_proper_ancestors(state, None)):
+        for s in [state_node] + list(get_proper_ancestors(state_node, None)):
             for t in s.transitions:
                 if t.event and name_match(t.event, event.name) and condition_match(t):
                     enabled_transitions.add(t)
                     test = True
 
     return enabled_transitions
+
+
+def select_eventless_transitions(
+    machine: Machine, state: State, configuration: Set[StateNode]
+):
+    enabled_transitions: Set[Transition] = set()
+    atomic_states = filter(is_atomic_state, configuration)
+
+    loop = True
+    for state in atomic_states:
+        if not loop:
+            break
+        for s in [state] + list(get_proper_ancestors(state, None)):
+            for t in s.transitions:
+                if not t.event and condition_match(t):
+                    enabled_transitions.add(t)
+                    loop = False
+
+    enabled_transitions = remove_conflicting_transitions(
+        transitions=enabled_transitions
+    )
+    return enabled_transitions
+
+
+def remove_conflicting_transitions(transitions: Set[Transition]):
+    # TODO: implement
+    return transitions
 
 
 def main_event_loop(machine: Machine, state: State, event: Event) -> State:
@@ -397,12 +421,39 @@ def main_event_loop(machine: Machine, state: State, event: Event) -> State:
         machine=machine, state=state, event=event, configuration=configuration
     )
 
-    (configuration, actions) = microstep(
+    (configuration, actions, internal_queue) = microstep(
         enabled_transitions,
         configuration=configuration,
         states_to_invoke=states_to_invoke,
         history_value=history_value,
     )
+
+    enabled_transitions = set()
+    macrostep_done = False
+
+    while not macrostep_done:
+        enabled_transitions = select_eventless_transitions(
+            machine, state=state, configuration=configuration
+        )
+
+        if not enabled_transitions:
+            if not internal_queue:
+                macrostep_done = True
+            else:
+                internal_event = internal_queue.pop()
+                enabled_transitions = select_transitions(
+                    machine,
+                    state=state,
+                    event=internal_event,
+                    configuration=configuration,
+                )
+        if enabled_transitions:
+            (configuration, actions, internal_queue) = microstep(
+                enabled_transitions=enabled_transitions,
+                configuration=configuration,
+                states_to_invoke=states_to_invoke,
+                history_value=history_value,
+            )
 
     return (configuration, actions)
 
@@ -414,6 +465,7 @@ def microstep(
     history_value: HistoryValue,
 ):
     actions: List[Action] = []
+    internal_queue: List[Event] = []
 
     exit_states(
         enabled_transitions,
@@ -429,9 +481,10 @@ def microstep(
         states_to_invoke=states_to_invoke,
         history_value=history_value,
         actions=actions,
+        internal_queue=internal_queue,
     )
 
-    return (configuration, actions)
+    return (configuration, actions, internal_queue)
 
 
 # ===================

@@ -67,6 +67,17 @@ class StateNode:
         if self.type is None:
             self.type = "atomic" if not self.states else "compound"
 
+        if self.type == "final":
+            self.donedata = config.get("data")
+
+        if config.get("onDone"):
+            done_event = f"done.state.{self.id}"
+            done_transition = Transition(
+                config.get("onDone"), source=self, event=done_event
+            )
+            self.on[done_event] = done_transition
+            self.transitions.append(done_transition)
+
         machine._register(self)
 
     def _get_relative(self, target: str) -> StateNode:

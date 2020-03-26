@@ -1,36 +1,48 @@
 from xstate.machine import Machine
 from xstate.state import State
 
-example = {
-    "key": "foo",
-    "id": "machine.foo",
-    "states": {"bar": {"on": {"TOUCH": "baz"},}, "baz": {},},
-}
 
 lights = Machine(
     {
-        "key": "lights",
         "id": "lights",
         "initial": "green",
         "states": {
-            "green": {
-                "entry": [{"type": "firstAction"}],
-                "initial": "first",
-                "states": {"first": {}},
-                "on": {"TIMER": "yellow"},
-            },
+            "green": {"entry": [{"type": "enterGreen"}], "on": {"TIMER": "yellow"},},
             "yellow": {"on": {"TIMER": "red"}},
-            "red": {"states": {"walk": {}, "wait": {}, "stop": {}}},
+            "red": {
+                "initial": "walk",
+                "states": {
+                    "walk": {"on": {"COUNTDOWN": "wait"}},
+                    "wait": {"on": {"COUNTDOWN": "stop"}},
+                    "stop": {"on": {"TIMEOUT": "timeout"}},
+                    "timeout": {"type": "final"},
+                },
+                "onDone": "green",
+            },
         },
     }
 )
 
 
 def test_machine():
-    assert lights.transition(lights.initial_state, "TIMER").value == "yellow"
+    yellow_state = lights.transition(lights.initial_state, "TIMER")
+
+    assert yellow_state.value == "yellow"
+
+    red_state = lights.transition(yellow_state, "TIMER")
+
+    assert red_state.value == {"red": "walk"}
 
 
 def test_machine_initial_state():
     state = lights.initial_state
 
-    assert lights.initial_state.value == {"green": "first"}
+    assert lights.initial_state.value == "green"
+
+
+def test_final_state():
+    red_stop_state = State({"red": "stop"}, None)
+
+    red_timeout_state = lights.transition(red_stop_state, "TIMEOUT")
+
+    assert red_timeout_state.value == "green"

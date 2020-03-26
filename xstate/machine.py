@@ -57,12 +57,13 @@ class Machine:
 
     @property
     def initial_state(self) -> State:
-        (configuration, actions) = enter_states(
+        (configuration, actions, internal_queue) = enter_states(
             [self.root.initial],
             configuration=set(),
             states_to_invoke=set(),
             history_value={},
             actions=[],
+            internal_queue=[],
         )
 
         return State(get_state_value(self.root, configuration), {}, actions=actions)
