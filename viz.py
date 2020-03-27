@@ -61,6 +61,8 @@ skinparam state {
         result += "@enduml\n"
 
     return result
+    
+    
 if __name__ == '__main__':
     output = render(
         state_node_to_viz(simple_machine.root),
