@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 class Transition:
     event: str
     source: StateNode
-    target: List[StateNode]
     config: Union[str, StateNode, Any]
     # "internal" or "external"
     type: str

@@ -12,13 +12,15 @@ if TYPE_CHECKING:
 class StateNode:
     on: Dict[str, Transition]
     machine: Machine
-    parent: Union[StateNode, Machine]
+    parent: Optional[StateNode]
     initial: Optional[Transition]
     entry: List[Action]
     exit: List[Action]
     donedata: Optional[Dict]
     type: str  # 'atomic' or 'compound' or 'parallel' or 'final'
     transitions: List[Transition]
+    id: str
+    states: Dict[str, StateNode]
 
     def __init__(
         self,
