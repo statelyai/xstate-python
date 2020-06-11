@@ -4,9 +4,9 @@ from xstate.transition import Transition
 from xstate.state_node import StateNode
 from xstate.action import Action
 from xstate.event import Event
-from xstate.state import State
 
 if TYPE_CHECKING:
+    from xstate.state import State
     from xstate.machine import Machine
 
 HistoryValue = Dict[str, Set[StateNode]]
@@ -458,6 +458,19 @@ def main_event_loop(machine: Machine, state: State, event: Event) -> State:
     return (configuration, actions)
 
 
+def execute_transition_content(
+    enabled_transitions: List[Transition], internal_queue: List[Event]
+):
+    actions: List[Action] = []
+    for transition in enabled_transitions:
+        for action in transition.actions:
+            actions.append(action)
+
+    for action in actions:
+        if action.type == "xstate:raise":
+            internal_queue.append(Event(action.data.get("event")))
+
+
 def microstep(
     enabled_transitions: List[Transition],
     configuration: Set[StateNode],
@@ -474,7 +487,9 @@ def microstep(
         history_value=history_value,
         actions=actions,
     )
-    # execute transition content
+
+    execute_transition_content(enabled_transitions, internal_queue=internal_queue)
+
     enter_states(
         enabled_transitions,
         configuration=configuration,

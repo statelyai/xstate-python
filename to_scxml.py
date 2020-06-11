@@ -63,6 +63,9 @@ def convert_raise(element: ET.Element, parent: ET.Element):
     return {"type": "xstate:raise", "event": element.attrib.get("event")}
 
 
+elements = {"scxml": convert_scxml, "state": convert_state}
+
+
 def convert(element: ET.Element, parent: Optional[ET.Element] = None):
     _, _, element_tag = element.tag.rpartition("}")  # strip namespace
     result = elements.get(element_tag, lambda _: f"Invalid tag: {element_tag}")
@@ -70,13 +73,31 @@ def convert(element: ET.Element, parent: Optional[ET.Element] = None):
     return result(element, parent)
 
 
-elements = {"scxml": convert_scxml, "state": convert_state}
+tree = ET.parse("node_modules/@scion-scxml/test-framework/test/actionSend/send1.scxml")
 
+with open(
+    "node_modules/@scion-scxml/test-framework/test/actionSend/send1.json"
+) as test_file:
+    test = json.load(test_file)
 
-def scxml_to_machine(source: str) -> Machine:
-    tree = ET.parse(source)
-    root = tree.getroot()
-    result = convert(root)
-    machine = Machine(result)
+print(test)
 
-    return machine
+root = tree.getroot()
+result = convert(root)
+machine = Machine(result)
+
+state = machine.initial_state
+
+for event_test in test.get("events"):
+    event_to_send = event_test.get("event")
+    event_name = event_to_send.get("name")
+    next_configuration = event_test.get("nextConfiguration")
+
+    state = machine.transition(state, event_name)
+
+    assert [sn.key for sn in state.configuration] == next_configuration
+
+print(machine.transition(machine.initial_state, "t"))
+
+# for child in root:
+#     print(child.tag, child.attrib)
