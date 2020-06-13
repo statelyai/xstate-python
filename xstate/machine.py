@@ -6,16 +6,20 @@ from xstate.event import Event
 
 
 class Machine:
+    id: str
     root: StateNode
     _id_map: Dict[str, StateNode]
+    config: object
+    states: List[State]
 
-    def __init__(self, config):
+    def __init__(self, config: object):
         self.id = config["id"]
         self._id_map = {}
         self.root = StateNode(
             config, machine=self, key=config.get("id", "(machine)"), parent=None
         )
         self.states = self.root.states
+        self.config = config
 
     def transition(self, state: State, event: str):
         (configuration, actions) = main_event_loop(self, state, Event(event))

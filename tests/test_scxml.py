@@ -6,12 +6,15 @@ from xstate.scxml import scxml_to_machine
 
 test_dir = "node_modules/@scion-scxml/test-framework/test"
 
-test_groups: Dict[str, List[str]] = {"actionSend": ["send1"]}
+test_groups: Dict[str, List[str]] = {"actionSend": ["send1", "send2"]}
 
 test_files = [
-    (f"{test_dir}/{k}/{vv}.scxml", f"{test_dir}/{k}/{vv}.json")
-    for k, v in test_groups.items()
-    for vv in v
+    (
+        f"{test_dir}/{test_group}/{test_name}.scxml",
+        f"{test_dir}/{test_group}/{test_name}.json",
+    )
+    for test_group, test_names in test_groups.items()
+    for test_name in test_names
 ]
 
 

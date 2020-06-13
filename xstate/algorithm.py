@@ -322,6 +322,7 @@ def exit_states(
     states_to_invoke: Set[StateNode],
     history_value: HistoryValue,
     actions: List[Action],
+    internal_queue: List[Event],
 ):
     states_to_exit = compute_exit_set(
         enabled_transitions, configuration=configuration, history_value=history_value
@@ -333,7 +334,7 @@ def exit_states(
     #     for h in s.history
     for s in states_to_exit:
         for action in s.exit:
-            actions.append(action)
+            execute_content(action, actions=actions, internal_queue=internal_queue)
         # for inv in s.invoke:
         #     cancelInvoke(inv)
         configuration.remove(s)
@@ -459,16 +460,20 @@ def main_event_loop(machine: Machine, state: State, event: Event) -> State:
 
 
 def execute_transition_content(
-    enabled_transitions: List[Transition], internal_queue: List[Event]
+    enabled_transitions: List[Transition],
+    actions: List[Action],
+    internal_queue: List[Event],
 ):
-    actions: List[Action] = []
     for transition in enabled_transitions:
         for action in transition.actions:
-            actions.append(action)
+            execute_content(action, actions, internal_queue)
 
-    for action in actions:
-        if action.type == "xstate:raise":
-            internal_queue.append(Event(action.data.get("event")))
+
+def execute_content(action: Action, actions: List[Action], internal_queue: List[Event]):
+    if action.type == "xstate:raise":
+        internal_queue.append(Event(action.data.get("event")))
+    else:
+        actions.append(action)
 
 
 def microstep(
@@ -486,9 +491,12 @@ def microstep(
         states_to_invoke=states_to_invoke,
         history_value=history_value,
         actions=actions,
+        internal_queue=internal_queue,
     )
 
-    execute_transition_content(enabled_transitions, internal_queue=internal_queue)
+    execute_transition_content(
+        enabled_transitions, actions=actions, internal_queue=internal_queue
+    )
 
     enter_states(
         enabled_transitions,

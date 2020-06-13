@@ -35,7 +35,10 @@ def convert_state(element: ET.Element, parent: ET.Element):
     transition_els = element.findall("scxml:transition", namespaces=ns)
     transitions = [convert_transition(el, element) for el in transition_els]
 
-    result = {"id": f"{id}", "key": id}
+    onexit_el = element.find("scxml:onexit", namespaces=ns)
+    onexit = convert_onexit(onexit_el, parent=element) if onexit_el else None
+
+    result = {"id": f"{id}", "key": id, "exit": onexit}
 
     if len(transitions) > 0:
         transitions_dict = {}
@@ -61,6 +64,13 @@ def convert_transition(element: ET.Element, parent: ET.Element):
 
 def convert_raise(element: ET.Element, parent: ET.Element):
     return {"type": "xstate:raise", "event": element.attrib.get("event")}
+
+
+def convert_onexit(element: ET.Element, parent: ET.Element):
+    raise_els = element.findall("scxml:raise", namespaces=ns)
+    actions = [convert_raise(raise_el, element) for raise_el in raise_els]
+
+    return actions
 
 
 def convert(element: ET.Element, parent: Optional[ET.Element] = None):
