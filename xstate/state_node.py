@@ -20,6 +20,7 @@ class StateNode:
     type: str  # 'atomic' or 'compound' or 'parallel' or 'final'
     transitions: List[Transition]
     id: str
+    key: str
     states: Dict[str, StateNode]
 
     def __init__(

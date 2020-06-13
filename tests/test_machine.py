@@ -41,7 +41,7 @@ def test_machine_initial_state():
 
 
 def test_final_state():
-    red_stop_state = State({"red": "stop"}, None)
+    red_stop_state = lights.state_from({"red": "stop"})
 
     red_timeout_state = lights.transition(red_stop_state, "TIMEOUT")
 

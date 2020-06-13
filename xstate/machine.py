@@ -22,7 +22,12 @@ class Machine:
 
         value = get_state_value(self.root, configuration=configuration)
 
-        return State(value, context={}, actions=actions)
+        return State(configuration=configuration, context={}, actions=actions)
+
+    def state_from(self, state_value) -> State:
+        configuration = self._get_configuration(state_value=state_value)
+
+        return State(configuration=configuration, context=None)
 
     def _register(self, state_node: StateNode):
         state_node.machine = self
@@ -66,4 +71,4 @@ class Machine:
             internal_queue=[],
         )
 
-        return State(get_state_value(self.root, configuration), {}, actions=actions)
+        return State(configuration=configuration, context={}, actions=actions)
