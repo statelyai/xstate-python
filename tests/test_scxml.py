@@ -6,7 +6,7 @@ from xstate.scxml import scxml_to_machine
 
 test_dir = "node_modules/@scion-scxml/test-framework/test"
 
-test_groups: Dict[str, List[str]] = {"actionSend": ["send1", "send2"]}
+test_groups: Dict[str, List[str]] = {"actionSend": ["send1", "send2", "send3"]}
 
 test_files = [
     (

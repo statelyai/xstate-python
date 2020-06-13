@@ -293,8 +293,7 @@ def enter_states(
 
         # TODO: sort
         for action in s.entry:
-            # do not execute; add to actions
-            actions.append(action)
+            execute_content(action, actions=actions, internal_queue=internal_queue)
         if s in states_for_default_entry:
             # executeContent(s.initial.transition)
             continue
