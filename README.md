@@ -2,6 +2,32 @@
 
 XState for Python - work in progress!
 
+## How to use
+~~~python
+
+from xstate.machine import Machine
+
+lights = Machine(
+    {
+        "id": "lights",
+        "initial": "green",
+        "states": {
+            "green": {"on": {"TIMER": "yellow"},},
+            "yellow": {"on": {"TIMER": "red"}},
+            "red": {"on": {"TIMER": "green"}},
+        },
+    }
+)
+
+state = lights.initial_state # state.value is green
+
+state = lights.transition(state, "TIMER") # state.value is yellow
+state = lights.transition(state, "TIMER") # state.value is red
+state = lights.transition(state, "TIMER") # state.value is green again
+~~~
+
+More advanced examples in [the "examples" folder](./examples)
+
 ## Testing
 
 1. Run `python3.7 -m venv .venv` to create a virtual environment
