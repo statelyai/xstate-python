@@ -2,9 +2,15 @@
 
 XState for Python - work in progress!
 
+## Install
+- From a local directory:
+~~~sh
+cd xstate-python/xstate
+pip3 install -e .
+~~~
+
 ## How to use
 ~~~python
-
 from xstate.machine import Machine
 
 lights = Machine(

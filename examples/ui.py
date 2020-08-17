@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 
-# add parent to the path to include local xstate module
-import sys
-sys.path.insert(0,'..')
-
 import tkinter
 from xstate.machine import Machine
 
