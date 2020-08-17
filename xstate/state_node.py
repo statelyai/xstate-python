@@ -42,7 +42,12 @@ class StateNode:
             if config.get("entry")
             else []
         )
-        self.exit = []
+
+        self.exit = (
+            [Action(exit_action.get("type")) for exit_action in config.get("exit")]
+            if config.get("exit")
+            else []
+        )
 
         self.key = key
         self.states = {
