@@ -7,7 +7,7 @@ lights = Machine(
         "id": "lights",
         "initial": "green",
         "states": {
-            "green": {"entry": [{"type": "enterGreen"}], "on": {"TIMER": "yellow"},},
+            "green": {"on": {"TIMER": "yellow"}},
             "yellow": {"on": {"TIMER": "red"}},
             "red": {
                 "initial": "walk",
