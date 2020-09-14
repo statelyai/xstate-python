@@ -35,6 +35,8 @@ class Machine:
         for action in actions:
             if action.type in self.actions:
                 result.append(self.actions[action.type])
+            elif callable(action.type):
+                result.append(action.type)
             else:
                 errors.append("No '{}' action".format(action.type)) 
         return result, errors

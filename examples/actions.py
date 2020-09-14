@@ -27,7 +27,10 @@ lights = Machine(
                 "entry": [{"type": "enterYellow"}]
             },
             "red": {
-                "on": {"TIMER": "green"}
+                "on": {"TIMER": "green"},
+                "entry": [
+                    lambda: print("\tINLINE callback")
+                ]
             },
         },
     },

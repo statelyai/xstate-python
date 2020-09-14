@@ -22,6 +22,12 @@ class StateNode:
     id: str
     key: str
     states: Dict[str, StateNode]
+    
+    def get_actions(self, action):
+        if callable(action):
+            return Action(action)
+        else:
+            return Action(action.get("type"))
 
     def __init__(
         self,
@@ -38,13 +44,13 @@ class StateNode:
             else config.get("id", machine.id + "." + key)
         )
         self.entry = (
-            [Action(entry_action.get("type")) for entry_action in config.get("entry")]
+            [self.get_actions(entry_action) for entry_action in config.get("entry")]
             if config.get("entry")
             else []
         )
 
         self.exit = (
-            [Action(exit_action.get("type")) for exit_action in config.get("exit")]
+            [self.get_actions(exit_action) for exit_action in config.get("exit")]
             if config.get("exit")
             else []
         )
