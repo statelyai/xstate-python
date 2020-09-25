@@ -14,7 +14,6 @@ test_files = [
     for vv in v
 ]
 
-
 @pytest.mark.parametrize("scxml_source,scxml_test_source", test_files)
 def test_scxml(scxml_source, scxml_test_source):
     machine = scxml_to_machine(scxml_source)
