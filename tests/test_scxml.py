@@ -9,7 +9,20 @@ pp = PrettyPrinter(indent=2)
 
 test_dir = "node_modules/@scion-scxml/test-framework/test"
 
-test_groups: Dict[str, List[str]] = {"actionSend": ["send1", "send2", "send3", "send4"]}
+test_groups: Dict[str, List[str]] = {
+    "actionSend": [
+        "send1",
+        "send2",
+        "send3",
+        "send4",
+        "send4b",
+        "send7",
+        "send7b",
+        "send8",
+        "send8b",
+        "send9",
+    ]
+}
 
 test_files = [
     (
@@ -34,10 +47,12 @@ def test_scxml(scxml_source, scxml_test_source):
         event_name = event_to_send.get("name")
         next_configuration = event_test.get("nextConfiguration")
 
-        state = machine.transition(state, event_name)
-
         try:
-            assert [sn.key for sn in state.configuration] == next_configuration
+            state = machine.transition(state, event_name)
+
+            assert [
+                sn.key for sn in state.configuration if sn.type == "atomic"
+            ] == next_configuration
         except:
             pp.pprint(machine.config)
             raise

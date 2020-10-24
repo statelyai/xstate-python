@@ -35,12 +35,22 @@ def convert_state(element: ET.Element, parent: ET.Element):
     transition_els = element.findall("scxml:transition", namespaces=ns)
     transitions = [convert_transition(el, element) for el in transition_els]
 
+    state_els = element.findall("scxml:state", namespaces=ns)
+    states = {el.attrib.get("id"): convert_state(el, element) for el in state_els}
+
     onexit_el = element.find("scxml:onexit", namespaces=ns)
     onexit = convert_onexit(onexit_el, parent=element) if onexit_el else None
     onentry_el = element.find("scxml:onentry", namespaces=ns)
     onentry = convert_onentry(onentry_el, parent=element) if onentry_el else None
 
-    result = {"id": f"{id}", "key": id, "exit": onexit, "entry": onentry}
+    result = {
+        "id": f"{id}",
+        "key": id,
+        "exit": onexit,
+        "entry": onentry,
+        "states": states,
+        "initial": state_els[0].attrib.get("id") if state_els else None,
+    }
 
     if len(transitions) > 0:
         transitions_dict = {}
