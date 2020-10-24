@@ -106,3 +106,6 @@ class StateNode:
             )
 
         return state_node
+
+    def __repr__(self) -> str:
+        return "<StateNode %s>" % repr({"id": self.id})

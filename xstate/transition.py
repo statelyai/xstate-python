@@ -1,15 +1,19 @@
 from __future__ import annotations
-from typing import List, Union, Any, TYPE_CHECKING
+from typing import List, Union, Any, NamedTuple, TYPE_CHECKING
 from xstate.action import Action
 
 if TYPE_CHECKING:
     from xstate.state_node import StateNode
 
 
+class TransitionConfig(NamedTuple):
+    target: List[str]
+
+
 class Transition:
     event: str
     source: StateNode
-    config: Union[str, StateNode, Any]
+    config: Union[str, StateNode, TransitionConfig]
     actions: List[Action]
     # "internal" or "external"
     type: str
@@ -36,6 +40,10 @@ class Transition:
         if isinstance(self.config, str):
             return [self.source._get_relative(self.config)]
         elif isinstance(self.config, dict):
+            if isinstance(self.config["target"], str):
+                return [self.source._get_relative(self.config["target"])]
+
             return [self.source._get_relative(v) for v in self.config["target"]]
         else:
             return [self.config]
+

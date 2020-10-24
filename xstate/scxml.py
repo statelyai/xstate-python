@@ -61,7 +61,7 @@ def convert_transition(element: ET.Element, parent: ET.Element):
 
     actions = [convert_raise(raise_el, element) for raise_el in raise_els]
 
-    return {"event": event_type, "target": event_target, "actions": actions}
+    return {"event": event_type, "target": ["#%s" % event_target], "actions": actions}
 
 
 def convert_raise(element: ET.Element, parent: ET.Element):

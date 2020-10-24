@@ -174,6 +174,7 @@ def get_effective_target_states(
     transition: Transition, history_value: HistoryValue
 ) -> Set[StateNode]:
     targets: Set[StateNode] = set()
+
     for s in transition.target:
         if is_history_state(s):
             if history_value.get(s.id):

@@ -3,10 +3,13 @@ from typing import Optional, Dict, List
 import json
 import pytest
 from xstate.scxml import scxml_to_machine
+from pprint import PrettyPrinter
+
+pp = PrettyPrinter(indent=2)
 
 test_dir = "node_modules/@scion-scxml/test-framework/test"
 
-test_groups: Dict[str, List[str]] = {"actionSend": ["send1", "send2", "send3"]}
+test_groups: Dict[str, List[str]] = {"actionSend": ["send1", "send2", "send3", "send4"]}
 
 test_files = [
     (
@@ -33,4 +36,9 @@ def test_scxml(scxml_source, scxml_test_source):
 
         state = machine.transition(state, event_name)
 
-        assert [sn.key for sn in state.configuration] == next_configuration
+        try:
+            assert [sn.key for sn in state.configuration] == next_configuration
+        except:
+            pp.pprint(machine.config)
+            raise
+
