@@ -11,8 +11,9 @@ class Machine:
     _id_map: Dict[str, StateNode]
     config: object
     states: List[State]
+    actions: List[lambda: None]
 
-    def __init__(self, config: object):
+    def __init__(self, config: object, actions={}):
         self.id = config["id"]
         self._id_map = {}
         self.root = StateNode(
@@ -20,13 +21,30 @@ class Machine:
         )
         self.states = self.root.states
         self.config = config
+        self.actions = actions
 
     def transition(self, state: State, event: str):
-        (configuration, actions) = main_event_loop(self, state, Event(event))
+        (configuration, _actions) = main_event_loop(self, state, Event(event))
 
         value = get_state_value(self.root, configuration=configuration)
 
+        actions, warnings = self._get_actions(_actions)
+        for w in warnings:
+            print(w)
+
         return State(configuration=configuration, context={}, actions=actions)
+
+    def _get_actions(self, actions) -> List[lambda: None]:
+        result = []
+        errors = []
+        for action in actions:
+            if action.type in self.actions:
+                result.append(self.actions[action.type])
+            elif callable(action.type):
+                result.append(action.type)
+            else:
+                errors.append("No '{}' action".format(action.type))
+        return result, errors
 
     def state_from(self, state_value) -> State:
         configuration = self._get_configuration(state_value=state_value)
@@ -66,7 +84,7 @@ class Machine:
 
     @property
     def initial_state(self) -> State:
-        (configuration, actions, internal_queue) = enter_states(
+        (configuration, _actions, internal_queue) = enter_states(
             [self.root.initial],
             configuration=set(),
             states_to_invoke=set(),
@@ -74,5 +92,9 @@ class Machine:
             actions=[],
             internal_queue=[],
         )
+
+        actions, warnings = self._get_actions(_actions)
+        for w in warnings:
+            print(w)
 
         return State(configuration=configuration, context={}, actions=actions)

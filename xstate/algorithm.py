@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Set, Dict, Optional, Union, TYPE_CHECKING
+from typing import List, Set, Dict, Optional, Tuple, Union, TYPE_CHECKING
 from xstate.transition import Transition
 from xstate.state_node import StateNode
 from xstate.action import Action
@@ -268,7 +268,7 @@ def enter_states(
     history_value: HistoryValue,
     actions: List[Action],
     internal_queue: List[Event],
-) -> (Set[StateNode], List[Action], List[Event]):
+) -> Tuple[Set[StateNode], List[Action], List[Event]]:
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
 
