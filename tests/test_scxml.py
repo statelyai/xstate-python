@@ -22,7 +22,9 @@ test_groups: Dict[str, List[str]] = {
         "send8b",
         "send9",
     ],
+    # "assign": ["assign_invalid", "assign_obj_literal"],
     "basic": ["basic0", "basic1", "basic2"],
+    "cond-js": ["test0", "test1", "test2"],
 }
 
 test_files = [
