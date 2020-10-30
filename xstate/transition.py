@@ -45,5 +45,5 @@ class Transition:
 
             return [self.source._get_relative(v) for v in self.config["target"]]
         else:
-            return [self.config]
+            return [self.config] if self.config else []
 

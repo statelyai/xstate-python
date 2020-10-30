@@ -9,10 +9,15 @@ ns = {"scxml": "http://www.w3.org/2005/07/scxml"}
 
 def convert_scxml(element: ET.Element, parent):
     states = element.findall("scxml:state", namespaces=ns)
+    state_els = element.findall("scxml:state", namespaces=ns)
+
+    initial_state_key = element.attrib.get(
+        "initial", convert_state(state_els[0], parent=element).get("key")
+    )
 
     return {
         "id": "machine",
-        "initial": element.attrib.get("initial", None),
+        "initial": initial_state_key,
         "states": accumulate_states(element, parent),
     }
 
