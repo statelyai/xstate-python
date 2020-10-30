@@ -366,7 +366,7 @@ def name_match(event: str, specific_event: str) -> bool:
 
 
 def condition_match(transition: Transition) -> bool:
-    return True
+    return transition.cond() if transition.cond else True
 
 
 def select_transitions(
