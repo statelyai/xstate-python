@@ -1,9 +1,12 @@
 from __future__ import annotations
-from typing import List, Union, Any, NamedTuple, TYPE_CHECKING
+from typing import List, Union, Any, NamedTuple, Callable, TYPE_CHECKING
 from xstate.action import Action
+from xstate.event import Event
 
 if TYPE_CHECKING:
     from xstate.state_node import StateNode
+
+CondFunction = Callable[[Any, Event], bool]
 
 
 class TransitionConfig(NamedTuple):
@@ -15,14 +18,18 @@ class Transition:
     source: StateNode
     config: Union[str, StateNode, TransitionConfig]
     actions: List[Action]
+    cond: Optional[CondFunction]
     # "internal" or "external"
     type: str
 
-    def __init__(self, config, source: StateNode, event: str):
+    def __init__(
+        self, config, source: StateNode, event: str, cond: Optional[CondFunction] = None
+    ):
         self.event = event
         self.config = config
         self.source = source
         self.type = "external"
+        self.cond = cond
 
         self.actions = (
             (
@@ -45,5 +52,5 @@ class Transition:
 
             return [self.source._get_relative(v) for v in self.config["target"]]
         else:
-            return [self.config]
+            return [self.config] if self.config else []
 

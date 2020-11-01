@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 from typing import Optional
 import json
+import js2py
 
 from xstate.machine import Machine
 
@@ -9,10 +10,15 @@ ns = {"scxml": "http://www.w3.org/2005/07/scxml"}
 
 def convert_scxml(element: ET.Element, parent):
     states = element.findall("scxml:state", namespaces=ns)
+    state_els = element.findall("scxml:state", namespaces=ns)
+
+    initial_state_key = element.attrib.get(
+        "initial", convert_state(state_els[0], parent=element).get("key")
+    )
 
     return {
         "id": "machine",
-        "initial": element.attrib.get("initial", None),
+        "initial": initial_state_key,
         "states": accumulate_states(element, parent),
     }
 
@@ -66,12 +72,24 @@ def convert_state(element: ET.Element, parent: ET.Element):
 def convert_transition(element: ET.Element, parent: ET.Element):
     event_type = element.attrib.get("event")
     event_target = element.attrib.get("target")
+    event_cond_str = element.attrib.get("cond")
+
+    event_cond = (
+        js2py.eval_js("function cond() { return %s }" % event_cond_str)
+        if event_cond_str
+        else None
+    )
 
     raise_els = element.findall("scxml:raise", namespaces=ns)
 
     actions = [convert_raise(raise_el, element) for raise_el in raise_els]
 
-    return {"event": event_type, "target": ["#%s" % event_target], "actions": actions}
+    return {
+        "event": event_type,
+        "target": ["#%s" % event_target],
+        "actions": actions,
+        "cond": event_cond,
+    }
 
 
 def convert_raise(element: ET.Element, parent: ET.Element):

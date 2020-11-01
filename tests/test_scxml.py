@@ -21,7 +21,10 @@ test_groups: Dict[str, List[str]] = {
         "send8",
         "send8b",
         "send9",
-    ]
+    ],
+    # "assign": ["assign_invalid", "assign_obj_literal"],
+    "basic": ["basic0", "basic1", "basic2"],
+    "cond-js": ["test0", "test1", "test2"],
 }
 
 test_files = [
@@ -37,23 +40,24 @@ test_files = [
 @pytest.mark.parametrize("scxml_source,scxml_test_source", test_files)
 def test_scxml(scxml_source, scxml_test_source):
     machine = scxml_to_machine(scxml_source)
-    state = machine.initial_state
 
-    with open(scxml_test_source) as scxml_test_file:
-        scxml_test = json.load(scxml_test_file)
+    try:
+        state = machine.initial_state
 
-    for event_test in scxml_test.get("events"):
-        event_to_send = event_test.get("event")
-        event_name = event_to_send.get("name")
-        next_configuration = event_test.get("nextConfiguration")
+        with open(scxml_test_source) as scxml_test_file:
+            scxml_test = json.load(scxml_test_file)
 
-        try:
-            state = machine.transition(state, event_name)
+            for event_test in scxml_test.get("events"):
+                event_to_send = event_test.get("event")
+                event_name = event_to_send.get("name")
+                next_configuration = event_test.get("nextConfiguration")
 
-            assert [
-                sn.key for sn in state.configuration if sn.type == "atomic"
-            ] == next_configuration
-        except:
-            pp.pprint(machine.config)
-            raise
+                state = machine.transition(state, event_name)
+
+                assert [
+                    sn.key for sn in state.configuration if sn.type == "atomic"
+                ] == next_configuration
+    except:
+        pp.pprint(machine.config)
+        raise
 

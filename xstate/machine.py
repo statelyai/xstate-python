@@ -10,7 +10,7 @@ class Machine:
     root: StateNode
     _id_map: Dict[str, StateNode]
     config: object
-    states: List[State]
+    states: Dict[str, StateNode]
     actions: List[lambda: None]
 
     def __init__(self, config: object, actions={}):
