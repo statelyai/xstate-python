@@ -369,9 +369,7 @@ def condition_match(transition: Transition) -> bool:
     return transition.cond() if transition.cond else True
 
 
-def select_transitions(
-    machine: Machine, state: State, event: Event, configuration: Set[StateNode]
-):
+def select_transitions(event: Event, configuration: Set[StateNode]):
     enabled_transitions: Set[Transition] = set()
     atomic_states = filter(is_atomic_state, configuration)
     test = False
@@ -387,9 +385,7 @@ def select_transitions(
     return enabled_transitions
 
 
-def select_eventless_transitions(
-    machine: Machine, state: State, configuration: Set[StateNode]
-):
+def select_eventless_transitions(configuration: Set[StateNode]):
     enabled_transitions: Set[Transition] = set()
     atomic_states = filter(is_atomic_state, configuration)
 
@@ -418,9 +414,7 @@ def main_event_loop(machine: Machine, state: State, event: Event) -> State:
     configuration = get_configuration_from_state(machine.root, state.value, set())
     states_to_invoke: Set[StateNode] = set()
     history_value = {}
-    enabled_transitions = select_transitions(
-        machine=machine, state=state, event=event, configuration=configuration
-    )
+    enabled_transitions = select_transitions(event=event, configuration=configuration)
 
     (configuration, actions, internal_queue) = microstep(
         enabled_transitions,
@@ -433,9 +427,7 @@ def main_event_loop(machine: Machine, state: State, event: Event) -> State:
     macrostep_done = False
 
     while not macrostep_done:
-        enabled_transitions = select_eventless_transitions(
-            machine, state=state, configuration=configuration
-        )
+        enabled_transitions = select_eventless_transitions(configuration=configuration)
 
         if not enabled_transitions:
             if not internal_queue:
@@ -443,8 +435,6 @@ def main_event_loop(machine: Machine, state: State, event: Event) -> State:
             else:
                 internal_event = internal_queue.pop()
                 enabled_transitions = select_transitions(
-                    machine,
-                    state=state,
                     event=internal_event,
                     configuration=configuration,
                 )
