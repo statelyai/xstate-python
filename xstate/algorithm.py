@@ -5,10 +5,6 @@ from xstate.state_node import StateNode
 from xstate.action import Action
 from xstate.event import Event
 
-if TYPE_CHECKING:
-    from xstate.state import State
-    from xstate.machine import Machine
-
 HistoryValue = Dict[str, Set[StateNode]]
 
 
@@ -410,7 +406,9 @@ def remove_conflicting_transitions(transitions: Set[Transition]):
     return transitions
 
 
-def main_event_loop(configuration: Set[StateNode], event: Event) -> State:
+def main_event_loop(
+    configuration: Set[StateNode], event: Event
+) -> Tuple[Set[StateNode], List[Action]]:
     states_to_invoke: Set[StateNode] = set()
     history_value = {}
     enabled_transitions = select_transitions(event=event, configuration=configuration)
@@ -470,7 +468,7 @@ def microstep(
     configuration: Set[StateNode],
     states_to_invoke: Set[StateNode],
     history_value: HistoryValue,
-):
+) -> Tuple[Set[StateNode], List[Action], List[Event]]:
     actions: List[Action] = []
     internal_queue: List[Event] = []
 
