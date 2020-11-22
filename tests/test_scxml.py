@@ -7,7 +7,7 @@ from pprint import PrettyPrinter
 
 pp = PrettyPrinter(indent=2)
 
-test_dir = "node_modules/@scion-scxml/test-framework/test"
+test_dir = "test-framework/test"
 
 test_groups: Dict[str, List[str]] = {
     "actionSend": [
