@@ -410,8 +410,7 @@ def remove_conflicting_transitions(transitions: Set[Transition]):
     return transitions
 
 
-def main_event_loop(machine: Machine, state: State, event: Event) -> State:
-    configuration = get_configuration_from_state(machine.root, state.value, set())
+def main_event_loop(configuration: Set[StateNode], event: Event) -> State:
     states_to_invoke: Set[StateNode] = set()
     history_value = {}
     enabled_transitions = select_transitions(event=event, configuration=configuration)

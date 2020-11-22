@@ -1,7 +1,12 @@
 from typing import Dict, List
 from xstate.state_node import StateNode
 from xstate.state import State
-from xstate.algorithm import enter_states, get_state_value, main_event_loop
+from xstate.algorithm import (
+    enter_states,
+    get_configuration_from_state,
+    get_state_value,
+    main_event_loop,
+)
 from xstate.event import Event
 
 
@@ -24,7 +29,10 @@ class Machine:
         self.actions = actions
 
     def transition(self, state: State, event: str):
-        (configuration, _actions) = main_event_loop(self, state, Event(event))
+        configuration = get_configuration_from_state(
+            from_node=self.root, state_value=state.value, partial_configuration=set()
+        )
+        (configuration, _actions) = main_event_loop(configuration, Event(event))
 
         value = get_state_value(self.root, configuration=configuration)
 
