@@ -6,6 +6,7 @@ from xstate.algorithm import (
     get_configuration_from_state,
     get_state_value,
     main_event_loop,
+    main_event_loop2,
 )
 from xstate.event import Event
 
@@ -99,6 +100,10 @@ class Machine:
             history_value={},
             actions=[],
             internal_queue=[],
+        )
+
+        (configuration, _actions) = main_event_loop2(
+            configuration=configuration, actions=_actions, internal_queue=internal_queue
         )
 
         actions, warnings = self._get_actions(_actions)

@@ -368,15 +368,19 @@ def condition_match(transition: Transition) -> bool:
 def select_transitions(event: Event, configuration: Set[StateNode]):
     enabled_transitions: Set[Transition] = set()
     atomic_states = filter(is_atomic_state, configuration)
-    test = False
+    break_loop = False
     for state_node in atomic_states:
-        if test:
+        if break_loop:
             break
         for s in [state_node] + list(get_proper_ancestors(state_node, None)):
             for t in s.transitions:
                 if t.event and name_match(t.event, event.name) and condition_match(t):
                     enabled_transitions.add(t)
-                    test = True
+                    break_loop = True
+
+    enabled_transitions = remove_conflicting_transitions(
+        enabled_transitions, configuration=configuration, history_value={}  # TODO
+    )
 
     return enabled_transitions
 
@@ -396,14 +400,47 @@ def select_eventless_transitions(configuration: Set[StateNode]):
                     loop = False
 
     enabled_transitions = remove_conflicting_transitions(
-        transitions=enabled_transitions
+        enabled_transitions=enabled_transitions,
+        configuration=configuration,
+        history_value={},  # TODO
     )
     return enabled_transitions
 
 
-def remove_conflicting_transitions(transitions: Set[Transition]):
-    # TODO: implement
-    return transitions
+def remove_conflicting_transitions(
+    enabled_transitions: Set[Transition],
+    configuration: Set[StateNode],
+    history_value: HistoryValue,
+):
+    filtered_transitions: Set[Transition] = set()
+    for t1 in enabled_transitions:
+        t1_preempted = False
+        transitions_to_remove: Set[Transition] = set()
+        for t2 in filtered_transitions:
+            t1_exit_set = compute_exit_set(
+                enabled_transitions=[t1],
+                configuration=configuration,
+                history_value=history_value,
+            )
+            t2_exit_set = compute_exit_set(
+                enabled_transitions=[t2],
+                configuration=configuration,
+                history_value=history_value,
+            )
+            intersection = [value for value in t1_exit_set if value in t2_exit_set]
+
+            if intersection:
+                if is_descendent(t1.source, t2.source):
+                    transitions_to_remove.add(t2)
+                else:
+                    t1_preempted = True
+                    break
+        if not t1_preempted:
+            for t3 in transitions_to_remove:
+                filtered_transitions.remove(t3)
+            filtered_transitions.add(t1)
+
+    return filtered_transitions
 
 
 def main_event_loop(
@@ -441,6 +478,35 @@ def main_event_loop(
                 configuration=configuration,
                 states_to_invoke=states_to_invoke,
                 history_value=history_value,
+            )
+
+    return (configuration, actions)
+
+
+def main_event_loop2(
+    configuration: Set[StateNode], actions: List[Action], internal_queue: List[Event]
+) -> Tuple[Set[StateNode], List[Action]]:
+    enabled_transitions = set()
+    macrostep_done = False
+
+    while not macrostep_done:
+        enabled_transitions = select_eventless_transitions(configuration=configuration)
+
+        if not enabled_transitions:
+            if not internal_queue:
+                macrostep_done = True
+            else:
+                internal_event = internal_queue.pop()
+                enabled_transitions = select_transitions(
+                    event=internal_event,
+                    configuration=configuration,
+                )
+        if enabled_transitions:
+            (configuration, actions, internal_queue) = microstep(
+                enabled_transitions=enabled_transitions,
+                configuration=configuration,
+                states_to_invoke=set(),  # TODO
+                history_value={},  # TODO
             )
 
     return (configuration, actions)

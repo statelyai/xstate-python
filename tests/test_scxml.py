@@ -24,7 +24,7 @@ test_groups: Dict[str, List[str]] = {
     ],
     # "assign": ["assign_invalid", "assign_obj_literal"],
     "basic": ["basic0", "basic1", "basic2"],
-    "cond-js": ["test0", "test1", "test2"],
+    "cond-js": ["test0", "test1", "test2", "TestConditionalTransition"],
 }
 
 test_files = [
@@ -60,4 +60,3 @@ def test_scxml(scxml_source, scxml_test_source):
     except:
         pp.pprint(machine.config)
         raise
-

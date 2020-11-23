@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class StateNode:
-    on: Dict[str, Transition]
+    on: Dict[str, List[Transition]]
     machine: Machine
     parent: Optional[StateNode]
     initial: Optional[Transition]
@@ -63,9 +63,13 @@ class StateNode:
         self.on = {}
         self.transitions = []
         for k, v in config.get("on", {}).items():
-            transition = Transition(v, source=self, event=k)
-            self.on[k] = transition
-            self.transitions.append(transition)
+            self.on[k] = []
+            transition_configs = v if isinstance(v, list) else [v]
+
+            for transition_config in transition_configs:
+                transition = Transition(transition_config, source=self, event=k)
+                self.on[k].append(transition)
+                self.transitions.append(transition)
 
         initial_key = config.get("initial")
 

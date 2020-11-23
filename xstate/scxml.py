@@ -62,7 +62,8 @@ def convert_state(element: ET.Element, parent: ET.Element):
         transitions_dict = {}
 
         for t in transitions:
-            transitions_dict[t.get("event")] = t
+            transitions_dict[t.get("event")] = transitions_dict.get(t.get("event"), [])
+            transitions_dict[t.get("event")].append(t)
 
         result["on"] = transitions_dict
 
