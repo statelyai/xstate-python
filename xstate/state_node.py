@@ -67,7 +67,12 @@ class StateNode:
             transition_configs = v if isinstance(v, list) else [v]
 
             for transition_config in transition_configs:
-                transition = Transition(transition_config, source=self, event=k)
+                transition = Transition(
+                    transition_config,
+                    source=self,
+                    event=k,
+                    order=len(self.transitions),
+                )
                 self.on[k].append(transition)
                 self.transitions.append(transition)
 
@@ -77,7 +82,7 @@ class StateNode:
             self.initial = None
         else:
             self.initial = Transition(
-                self.states.get(initial_key), source=self, event=None
+                self.states.get(initial_key), source=self, event=None, order=-1
             )
 
         self.type = config.get("type")
@@ -91,7 +96,10 @@ class StateNode:
         if config.get("onDone"):
             done_event = f"done.state.{self.id}"
             done_transition = Transition(
-                config.get("onDone"), source=self, event=done_event
+                config.get("onDone"),
+                source=self,
+                event=done_event,
+                order=len(self.transitions),
             )
             self.on[done_event] = done_transition
             self.transitions.append(done_transition)

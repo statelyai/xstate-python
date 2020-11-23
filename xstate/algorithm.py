@@ -394,7 +394,7 @@ def select_eventless_transitions(configuration: Set[StateNode]):
         if not loop:
             break
         for s in [state] + list(get_proper_ancestors(state, None)):
-            for t in s.transitions:
+            for t in sorted(s.transitions, key=lambda t: t.order):
                 if not t.event and condition_match(t):
                     enabled_transitions.add(t)
                     loop = False
@@ -412,6 +412,8 @@ def remove_conflicting_transitions(
     configuration: Set[StateNode],
     history_value: HistoryValue,
 ):
+    enabled_transitions = sorted(enabled_transitions, key=lambda t: t.order)
+
     filtered_transitions: Set[Transition] = set()
     for t1 in enabled_transitions:
         t1_preempted = False
@@ -457,28 +459,9 @@ def main_event_loop(
         history_value=history_value,
     )
 
-    enabled_transitions = set()
-    macrostep_done = False
-
-    while not macrostep_done:
-        enabled_transitions = select_eventless_transitions(configuration=configuration)
-
-        if not enabled_transitions:
-            if not internal_queue:
-                macrostep_done = True
-            else:
-                internal_event = internal_queue.pop()
-                enabled_transitions = select_transitions(
-                    event=internal_event,
-                    configuration=configuration,
-                )
-        if enabled_transitions:
-            (configuration, actions, internal_queue) = microstep(
-                enabled_transitions=enabled_transitions,
-                configuration=configuration,
-                states_to_invoke=states_to_invoke,
-                history_value=history_value,
-            )
+    (configuration, actions) = main_event_loop2(
+        configuration=configuration, actions=actions, internal_queue=internal_queue
+    )
 
     return (configuration, actions)
 

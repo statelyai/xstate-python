@@ -19,17 +19,24 @@ class Transition:
     config: Union[str, StateNode, TransitionConfig]
     actions: List[Action]
     cond: Optional[CondFunction]
+    order: int
     # "internal" or "external"
     type: str
 
     def __init__(
-        self, config, source: StateNode, event: str, cond: Optional[CondFunction] = None
+        self,
+        config,
+        source: StateNode,
+        event: str,
+        order: int,
+        cond: Optional[CondFunction] = None,
     ):
         self.event = event
         self.config = config
         self.source = source
         self.type = "external"
         self.cond = config.get("cond", None) if isinstance(config, dict) else None
+        self.order = order
 
         self.actions = (
             (
@@ -59,9 +66,10 @@ class Transition:
             {
                 "event": self.event,
                 "source": self.source.id,
-                "target": [f"#{}" % t.id for t in self.target],
+                "target": [f"#{t.id}" for t in self.target],
                 "cond": self.cond,
                 "actions": self.actions,
-                "type": self.type
+                "type": self.type,
+                "order": self.order,
             }
         )
