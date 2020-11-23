@@ -107,7 +107,7 @@ def add_descendent_states_to_enter(
                 for child in get_child_states(state):
                     if not any([is_descendent(s, child) for s in states_to_enter]):
                         add_descendent_states_to_enter(
-                            s,
+                            child,
                             states_to_enter=states_to_enter,
                             states_for_default_entry=states_for_default_entry,
                             default_history_content=default_history_content,
@@ -124,7 +124,9 @@ def is_compound_state(state: StateNode) -> bool:
 
 
 def is_atomic_state(state: StateNode) -> bool:
-    return state.type == "atomic" or state.type == "final" or state.type == "history"
+    return any(
+        state.type == state_type for state_type in ["atomic", "final", "history"]
+    )
 
 
 def is_descendent(state: StateNode, state2: StateNode) -> bool:
@@ -218,11 +220,11 @@ def add_ancestor_states_to_enter(
 
 def get_proper_ancestors(
     state1: StateNode, state2: Optional[StateNode]
-) -> Set[StateNode]:
-    ancestors: Set[StateNode] = set()
+) -> List[StateNode]:
+    ancestors: List[StateNode] = []
     marker = state1.parent
     while marker and marker != state2:
-        ancestors.add(marker)
+        ancestors.append(marker)
         marker = marker.parent
 
     return ancestors
@@ -367,13 +369,13 @@ def condition_match(transition: Transition) -> bool:
 
 def select_transitions(event: Event, configuration: Set[StateNode]):
     enabled_transitions: Set[Transition] = set()
-    atomic_states = filter(is_atomic_state, configuration)
-    break_loop = False
+    atomic_states = [s for s in configuration if is_atomic_state(s)]
     for state_node in atomic_states:
-        if break_loop:
-            break
-        for s in [state_node] + list(get_proper_ancestors(state_node, None)):
-            for t in s.transitions:
+        break_loop = False
+        for s in [state_node] + get_proper_ancestors(state_node, None):
+            if break_loop:
+                break
+            for t in sorted(s.transitions, key=lambda t: t.order):
                 if t.event and name_match(t.event, event.name) and condition_match(t):
                     enabled_transitions.add(t)
                     break_loop = True
@@ -393,7 +395,7 @@ def select_eventless_transitions(configuration: Set[StateNode]):
     for state in atomic_states:
         if not loop:
             break
-        for s in [state] + list(get_proper_ancestors(state, None)):
+        for s in [state] + get_proper_ancestors(state, None):
             for t in sorted(s.transitions, key=lambda t: t.order):
                 if not t.event and condition_match(t):
                     enabled_transitions.add(t)

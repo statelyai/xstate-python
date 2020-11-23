@@ -29,6 +29,7 @@ test_groups: Dict[str, List[str]] = {
     "documentOrder": ["documentOrder0"],
     "hierarchy": ["hier0", "hier1", "hier2"],
     "hierarchy+documentOrder": ["test0", "test1"],
+    "parallel": ["test0", "test1", "test2", "test3"],
 }
 
 test_files = [
@@ -58,9 +59,9 @@ def test_scxml(scxml_source, scxml_test_source):
 
                 state = machine.transition(state, event_name)
 
-                assert [
-                    sn.key for sn in state.configuration if sn.type == "atomic"
-                ] == next_configuration
+                assert sorted(
+                    [sn.key for sn in state.configuration if sn.type == "atomic"]
+                ) == sorted(next_configuration)
     except:
         pp.pprint(machine.config)
         raise
