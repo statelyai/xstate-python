@@ -25,6 +25,10 @@ test_groups: Dict[str, List[str]] = {
     # "assign": ["assign_invalid", "assign_obj_literal"],
     "basic": ["basic0", "basic1", "basic2"],
     "cond-js": ["test0", "test1", "test2", "TestConditionalTransition"],
+    "default-initial-state": ["initial1", "initial2"],
+    "documentOrder": ["documentOrder0"],
+    "hierarchy": ["hier0", "hier1", "hier2"],
+    "hierarchy+documentOrder": ["test0", "test1"],
 }
 
 test_files = [
