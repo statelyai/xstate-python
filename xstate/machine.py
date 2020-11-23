@@ -93,6 +93,7 @@ class Machine:
 
     @property
     def initial_state(self) -> State:
+        print(self.root.initial)
         (configuration, _actions, internal_queue) = enter_states(
             [self.root.initial],
             configuration=set(),

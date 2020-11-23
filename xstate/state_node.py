@@ -37,6 +37,7 @@ class StateNode:
         key: str,
         parent: Union[StateNode, Machine] = None,
     ):
+        self.config = config
         self.parent = parent
         self.id = (
             config.get("id", parent.id + "." + key)
@@ -76,15 +77,6 @@ class StateNode:
                 self.on[k].append(transition)
                 self.transitions.append(transition)
 
-        initial_key = config.get("initial")
-
-        if not initial_key:
-            self.initial = None
-        else:
-            self.initial = Transition(
-                self.states.get(initial_key), source=self, event=None, order=-1
-            )
-
         self.type = config.get("type")
 
         if self.type is None:
@@ -105,6 +97,20 @@ class StateNode:
             self.transitions.append(done_transition)
 
         machine._register(self)
+
+    @property
+    def initial(self):
+        initial_key = self.config.get("initial")
+
+        if not initial_key:
+            if self.type == "compound":
+                return Transition(
+                    next(iter(self.states.values())), source=self, event=None, order=-1
+                )
+        else:
+            return Transition(
+                self.states.get(initial_key), source=self, event=None, order=-1
+            )
 
     def _get_relative(self, target: str) -> StateNode:
         if target.startswith("#"):

@@ -11,9 +11,12 @@ ns = {"scxml": "http://www.w3.org/2005/07/scxml"}
 def convert_scxml(element: ET.Element, parent):
     states = element.findall("scxml:state", namespaces=ns)
     state_els = element.findall("scxml:state", namespaces=ns)
+    parallel_els = element.findall("scxml:parallel", namespaces=ns)
+    all_state_els = state_els + parallel_els
 
     initial_state_key = element.attrib.get(
-        "initial", convert_state(state_els[0], parent=element).get("key")
+        "initial",
+        convert_state(all_state_els[0], parent=element).get("key"),
     )
 
     return {
@@ -25,7 +28,9 @@ def convert_scxml(element: ET.Element, parent):
 
 def accumulate_states(element: ET.Element, parent: ET.Element):
     state_els = element.findall("scxml:state", namespaces=ns)
-    states = [convert_state(state_el, element) for state_el in state_els]
+    parallel_els = element.findall("scxml:parallel", namespaces=ns)
+    all_state_els = state_els + parallel_els
+    states = [convert_state(state_el, element) for state_el in all_state_els]
 
     states_dict = {}
 
@@ -42,14 +47,18 @@ def convert_state(element: ET.Element, parent: ET.Element):
     transitions = [convert_transition(el, element) for el in transition_els]
 
     state_els = element.findall("scxml:state", namespaces=ns)
-    states = {el.attrib.get("id"): convert_state(el, element) for el in state_els}
+
+    states = accumulate_states(element, parent)
 
     onexit_el = element.find("scxml:onexit", namespaces=ns)
     onexit = convert_onexit(onexit_el, parent=element) if onexit_el else None
     onentry_el = element.find("scxml:onentry", namespaces=ns)
     onentry = convert_onentry(onentry_el, parent=element) if onentry_el else None
 
+    _, _, tag = element.tag.rpartition("}")
+
     result = {
+        "type": "parallel" if tag == "parallel" else None,
         "id": f"{id}",
         "key": id,
         "exit": onexit,
