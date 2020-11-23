@@ -47,7 +47,8 @@ def convert_state(element: ET.Element, parent: ET.Element):
     transitions = [convert_transition(el, element) for el in transition_els]
 
     state_els = element.findall("scxml:state", namespaces=ns)
-    states = {el.attrib.get("id"): convert_state(el, element) for el in state_els}
+
+    states = accumulate_states(element, parent)
 
     onexit_el = element.find("scxml:onexit", namespaces=ns)
     onexit = convert_onexit(onexit_el, parent=element) if onexit_el else None
