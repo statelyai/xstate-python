@@ -223,8 +223,11 @@ def get_proper_ancestors(
 ) -> List[StateNode]:
     ancestors: List[StateNode] = []
     marker = state1.parent
-    while marker and marker != state2:
+    while marker:
         ancestors.append(marker)
+        if marker == state2:
+            break
+
         marker = marker.parent
 
     return ancestors
@@ -379,9 +382,6 @@ def select_transitions(event: Event, configuration: Set[StateNode]):
                 if t.event and name_match(t.event, event.name) and condition_match(t):
                     enabled_transitions.add(t)
                     break_loop = True
-
-    print("trans", enabled_transitions)
-
     enabled_transitions = remove_conflicting_transitions(
         enabled_transitions, configuration=configuration, history_value={}  # TODO
     )
@@ -455,14 +455,12 @@ def main_event_loop(
     states_to_invoke: Set[StateNode] = set()
     history_value = {}
     enabled_transitions = select_transitions(event=event, configuration=configuration)
-
     (configuration, actions, internal_queue) = microstep(
         enabled_transitions,
         configuration=configuration,
         states_to_invoke=states_to_invoke,
         history_value=history_value,
     )
-
     (configuration, actions) = main_event_loop2(
         configuration=configuration, actions=actions, internal_queue=internal_queue
     )
@@ -533,7 +531,6 @@ def microstep(
         actions=actions,
         internal_queue=internal_queue,
     )
-
     execute_transition_content(
         enabled_transitions, actions=actions, internal_queue=internal_queue
     )
@@ -546,7 +543,6 @@ def microstep(
         actions=actions,
         internal_queue=internal_queue,
     )
-
     return (configuration, actions, internal_queue)
 
 

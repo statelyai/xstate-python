@@ -43,6 +43,16 @@ test_groups: Dict[str, List[str]] = {
         "test9",
         "test10",
     ],
+    "more-parallel": [
+        "test0",
+        "test1",
+        "test2",
+        "test2b",
+        "test3",
+        "test3b",
+        "test4",
+        "test5",
+    ],
 }
 
 test_files = [
