@@ -22,12 +22,7 @@ class StateNode:
     id: str
     key: str
     states: Dict[str, StateNode]
-
-    def get_actions(self, action):
-        if callable(action):
-            return Action(action)
-        else:
-            return Action(action.get("type"), exec=None, data=action)
+    order: int
 
     def __init__(
         self,
@@ -37,8 +32,10 @@ class StateNode:
         key: str,
         parent: Union[StateNode, Machine] = None,
     ):
+        self.order = machine._get_order()
         self.config = config
         self.parent = parent
+        self.machine = machine
         self.id = (
             config.get("id", parent.id + "." + key)
             if parent
@@ -72,7 +69,7 @@ class StateNode:
                     transition_config,
                     source=self,
                     event=k,
-                    order=len(self.transitions),
+                    order=self.machine._get_order(),
                 )
                 self.on[k].append(transition)
                 self.transitions.append(transition)
@@ -91,12 +88,18 @@ class StateNode:
                 config.get("onDone"),
                 source=self,
                 event=done_event,
-                order=len(self.transitions),
+                order=self.machine._get_order(),
             )
             self.on[done_event] = done_transition
             self.transitions.append(done_transition)
 
         machine._register(self)
+
+    def get_actions(self, action):
+        if callable(action):
+            return Action(action)
+        else:
+            return Action(action.get("type"), exec=None, data=action)
 
     @property
     def initial(self):

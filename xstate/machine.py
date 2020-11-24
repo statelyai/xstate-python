@@ -18,16 +18,23 @@ class Machine:
     config: object
     states: Dict[str, StateNode]
     actions: List[lambda: None]
+    _order: int
 
     def __init__(self, config: object, actions={}):
         self.id = config["id"]
         self._id_map = {}
+        self._order = 0
         self.root = StateNode(
             config, machine=self, key=config.get("id", "(machine)"), parent=None
         )
         self.states = self.root.states
         self.config = config
         self.actions = actions
+
+    def _get_order(self) -> int:
+        order = self._order
+        self._order += 1
+        return order
 
     def transition(self, state: State, event: str):
         configuration = get_configuration_from_state(

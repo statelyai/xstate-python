@@ -30,6 +30,19 @@ test_groups: Dict[str, List[str]] = {
     "hierarchy": ["hier0", "hier1", "hier2"],
     "hierarchy+documentOrder": ["test0", "test1"],
     "parallel": ["test0", "test1", "test2", "test3"],
+    "parallel+interrupt": [
+        "test0",
+        "test1",
+        "test2",
+        "test3",
+        "test4",
+        "test5",
+        "test6",
+        "test7",
+        "test8",
+        "test9",
+        "test10",
+    ],
 }
 
 test_files = [

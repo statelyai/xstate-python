@@ -380,11 +380,13 @@ def select_transitions(event: Event, configuration: Set[StateNode]):
                     enabled_transitions.add(t)
                     break_loop = True
 
+    print("trans", enabled_transitions)
+
     enabled_transitions = remove_conflicting_transitions(
         enabled_transitions, configuration=configuration, history_value={}  # TODO
     )
 
-    return enabled_transitions
+    return sorted(enabled_transitions, key=lambda t: t.order)
 
 
 def select_eventless_transitions(configuration: Set[StateNode]):
