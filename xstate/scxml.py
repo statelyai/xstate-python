@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from typing import Optional
+from typing import List, Optional
 import json
 import js2py
 
@@ -8,11 +8,19 @@ from xstate.machine import Machine
 ns = {"scxml": "http://www.w3.org/2005/07/scxml"}
 
 
+def get_all_state_els(element: ET.Element) -> List[ET.Element]:
+    all_state_els = [
+        e for e in element if get_tag(e) == "state" or get_tag(e) == "parallel"
+    ]
+
+    return all_state_els
+
+
 def convert_scxml(element: ET.Element, parent):
     states = element.findall("scxml:state", namespaces=ns)
     state_els = element.findall("scxml:state", namespaces=ns)
     parallel_els = element.findall("scxml:parallel", namespaces=ns)
-    all_state_els = state_els + parallel_els
+    all_state_els = get_all_state_els(element)
 
     initial_state_key = element.attrib.get(
         "initial",
@@ -84,7 +92,7 @@ def convert_state(element: ET.Element, parent: ET.Element):
 
 def convert_transition(element: ET.Element, parent: ET.Element):
     event_type = element.attrib.get("event")
-    event_target = element.attrib.get("target")
+    event_targets = element.attrib.get("target").split(" ")
     event_cond_str = element.attrib.get("cond")
 
     event_cond = (
@@ -99,7 +107,7 @@ def convert_transition(element: ET.Element, parent: ET.Element):
 
     return {
         "event": event_type,
-        "target": ["#%s" % event_target],
+        "target": ["#%s" % t for t in event_targets],
         "actions": actions,
         "cond": event_cond,
     }

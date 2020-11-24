@@ -52,6 +52,13 @@ test_groups: Dict[str, List[str]] = {
         "test3b",
         "test4",
         "test5",
+        "test6",
+        "test6b",
+        "test7",
+        "test8",
+        "test9",
+        # "test10", # TODO: needs assign()
+        # "test10b", # TODO: needs assign()
     ],
 }
 

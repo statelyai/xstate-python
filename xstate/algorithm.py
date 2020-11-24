@@ -148,7 +148,7 @@ def is_descendent(state: StateNode, state2: StateNode) -> bool:
 #         return findLCCA([t.source].append(tstates))
 def get_transition_domain(
     transition: Transition, history_value: HistoryValue
-) -> StateNode:
+) -> Optional[StateNode]:
     tstates = get_effective_target_states(transition, history_value=history_value)
     if not tstates:
         return None
