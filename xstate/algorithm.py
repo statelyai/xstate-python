@@ -461,14 +461,14 @@ def main_event_loop(
         history_value=history_value,
     )
 
-    (configuration, actions) = main_event_loop2(
+    (configuration, actions) = macrostep(
         configuration=configuration, actions=actions, internal_queue=internal_queue
     )
 
     return (configuration, actions)
 
 
-def main_event_loop2(
+def macrostep(
     configuration: Set[StateNode], actions: List[Action], internal_queue: List[Event]
 ) -> Tuple[Set[StateNode], List[Action]]:
     enabled_transitions = set()

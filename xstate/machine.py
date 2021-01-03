@@ -4,9 +4,8 @@ from xstate.state import State
 from xstate.algorithm import (
     enter_states,
     get_configuration_from_state,
-    get_state_value,
     main_event_loop,
-    main_event_loop2,
+    macrostep,
 )
 from xstate.event import Event
 
@@ -34,8 +33,6 @@ class Machine:
             from_node=self.root, state_value=state.value, partial_configuration=set()
         )
         (configuration, _actions) = main_event_loop(configuration, Event(event))
-
-        value = get_state_value(self.root, configuration=configuration)
 
         actions, warnings = self._get_actions(_actions)
         for w in warnings:
@@ -103,7 +100,7 @@ class Machine:
             internal_queue=[],
         )
 
-        (configuration, _actions) = main_event_loop2(
+        (configuration, _actions) = macrostep(
             configuration=configuration, actions=_actions, internal_queue=internal_queue
         )
 
