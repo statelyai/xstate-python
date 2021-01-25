@@ -6,7 +6,7 @@ XState for Python - work in progress!
 
 ```python
 
-from xstate.machine import Machine
+from xstate import Machine
 
 lights = Machine(
     {

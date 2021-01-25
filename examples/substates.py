@@ -4,7 +4,7 @@
 import sys
 sys.path.insert(0,'..')
 
-from xstate.machine import Machine
+from xstate import Machine
 import time
 
 
