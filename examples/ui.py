@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0,'..')
 
 import tkinter
-from xstate.machine import Machine
+from xstate import Machine
 
 
 class ApplicationBasic():

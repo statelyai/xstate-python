@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from xstate.machine import Machine
+from xstate import Machine
 import time
 
 # Trafic light example
