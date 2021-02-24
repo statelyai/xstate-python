@@ -57,6 +57,11 @@ def convert_state(element: ET.Element, parent: ET.Element):
 
     _, _, tag = element.tag.rpartition("}")
 
+    initial_state_key = element.attrib.get(
+        "initial",
+        convert_state(state_els[0], parent=element).get("key") if state_els else None,
+    )
+
     result = {
         "type": "parallel" if tag == "parallel" else None,
         "id": f"{id}",
@@ -64,7 +69,7 @@ def convert_state(element: ET.Element, parent: ET.Element):
         "exit": onexit,
         "entry": onentry,
         "states": states,
-        "initial": state_els[0].attrib.get("id") if state_els else None,
+        "initial": initial_state_key,
     }
 
     if len(transitions) > 0:
