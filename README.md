@@ -35,7 +35,8 @@ More advanced examples in [the "examples" folder](./examples)
 2. Run `source .venv/bin/activate` to go into that virtual environment
 3. Run `pip install -r requirements_dev.txt` to install all of the dependencies in `requirements.txt` (which includes `pytest`)
 4. Run `npm i @scion-scxml/test-framework` to download scxml files
-5. Run `pytest` to run the tests! 👩‍🔬
+5. Make sure test files are present and up to date, run `git submodule init` (first time) and `git submodule update`
+6. Run `pytest` to run the tests! 👩‍🔬
 
 ## SCXML
 
