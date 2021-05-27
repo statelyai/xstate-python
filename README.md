@@ -33,12 +33,12 @@ More advanced examples in [the "examples" folder](./examples)
 
 You can set up your development environment in two different ways. 
 
-### Using [VSCode Remote Containers](https://code.visualstudio.com/docs/remote/containers)
+### Using [VS Code Remote Containers](https://code.visualstudio.com/docs/remote/containers)
 
-Note this requires VSCode and the Remote Containers extension (which uses Docker containers)
+Note this requires VS Code and the Remote Containers extension (which uses Docker containers)
 
 1. [Open the folder in a container](https://code.visualstudio.com/docs/remote/containers#_quick-start-open-an-existing-folder-in-a-container). This will setup your environment with python (including python and pylance extensions), dependencies and download scxml tests.
-1. Run `pytest` to run the tests! 👩‍🔬 (or run the `Run tests` task via VSCode)
+1. Run `pytest` to run the tests! 👩‍🔬 (or run the `Run tests` task via VS Code)
 
 ### Or on local drive
 
@@ -46,7 +46,7 @@ Note this requires VSCode and the Remote Containers extension (which uses Docker
 1. Run `source .venv/bin/activate` to go into that virtual environment
 1. Run `pip install -r requirements_dev.txt` to install all of the dependencies in `requirements.txt` (which includes `pytest`)
 1. Make sure test files are present and up to date by running `git submodule init` (first time) and `git submodule update`
-1. Run `pytest` to run the tests! 👩‍🔬 (or run the `Run tests` task via VSCode)
+1. Run `pytest` to run the tests! 👩‍🔬 (or run the `Run tests` task via VS Code)
 
 ## SCXML
 
