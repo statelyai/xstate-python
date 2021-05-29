@@ -17,6 +17,7 @@ def exitGreen():
     print("\tEXIT_GREEN callback")
 
 
+# fmt: off
 lights = Machine(
     {
         "id": "lights",
@@ -27,7 +28,10 @@ lights = Machine(
                 "entry": [{"type": "enterGreen"}],
                 "exit": [{"type": "exitGreen"}],
             },
-            "yellow": {"on": {"TIMER": "red"}, "entry": [{"type": "enterYellow"}]},
+            "yellow": {
+                "on": {"TIMER": "red"}, 
+                "entry": [{"type": "enterYellow"}]
+            },
             "red": {
                 "on": {"TIMER": "green"},
                 "entry": [lambda: print("\tINLINE callback")],
@@ -41,6 +45,7 @@ lights = Machine(
         "enterYellow": lambda: print("\tENTER_YELLOW callback"),
     },
 )
+# fmt: on
 
 if __name__ == "__main__":
     state = lights.initial_state
