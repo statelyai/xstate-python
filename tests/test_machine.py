@@ -1,5 +1,4 @@
 from xstate.machine import Machine
-from xstate.state import State
 
 lights = Machine(
     {
@@ -34,7 +33,6 @@ def test_machine():
 
 
 def test_machine_initial_state():
-    state = lights.initial_state
 
     assert lights.initial_state.value == "green"
 

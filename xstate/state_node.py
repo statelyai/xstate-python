@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from xstate.action import Action
@@ -121,7 +120,7 @@ class StateNode:
 
         if not state_node:
             raise ValueError(
-                f"Relative state node '{target}' does not exist on state node '#{self.id}'"
+                f"Relative state node '{target}' does not exist on state node '#{self.id}'"  # noqa
             )
 
         return state_node

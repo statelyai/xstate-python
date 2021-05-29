@@ -1,1 +1,1 @@
-from xstate.machine import Machine
+from xstate.machine import Machine  # noqa

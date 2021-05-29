@@ -5,9 +5,9 @@ import sys
 
 sys.path.insert(0, "..")
 
-import time
+import time  # noqa
 
-from xstate import Machine
+from xstate import Machine  # noqa
 
 # Trafic light example
 # green -> yellow -> red -> green ..

@@ -5,9 +5,9 @@ import sys
 
 sys.path.insert(0, "..")
 
-import time
+import time  # noqa
 
-from xstate import Machine
+from xstate import Machine  # noqa
 
 # Trafic light example with substate
 # green -> yellow -> red.walk -> red.wait -> red.stop -> green ..
@@ -28,9 +28,8 @@ lights = Machine(
                     "walk": {"on": {"COUNTDOWN": "wait"}},
                     "wait": {"on": {"COUNTDOWN": "stop"}},
                     "stop": {"on": {"TIMEOUT": "timeout"}},
-                    "timeout": {
-                        "type": "final"
-                    },  # type 'final' will make it to the onDone step of the superior FSM
+                    "timeout": {"type": "final"},
+                    # type 'final' will make it to the onDone step of the superior FSM
                 },
                 "onDone": "green",
             },

@@ -5,9 +5,9 @@ import sys
 
 sys.path.insert(0, "..")
 
-import tkinter
+import tkinter  # noqa
 
-from xstate import Machine
+from xstate import Machine  # noqa
 
 
 class ApplicationBasic:
