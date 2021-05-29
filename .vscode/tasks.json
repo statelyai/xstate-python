@@ -8,6 +8,12 @@
             "type": "shell",
             "command": "poetry run pytest --cov",
             "problemMatcher": []
+        },
+        {
+            "label": "Format code",
+            "type": "shell",
+            "command": "poetry run black . && poetry run isort .",
+            "problemMatcher": []
         }
     ]
 }
