@@ -29,6 +29,9 @@ isort = "^5.8.0"
 flake8 = "^3.9.2"
 mypy = "^0.812"
 
+[tool.isort]
+profile = "black"
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
