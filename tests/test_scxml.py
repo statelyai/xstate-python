@@ -1,9 +1,10 @@
-import xml.etree.ElementTree as ET
-from typing import Optional, Dict, List
 import json
-import pytest
-from xstate.scxml import scxml_to_machine
 from pprint import PrettyPrinter
+from typing import Dict, List
+
+import pytest
+
+from xstate.scxml import scxml_to_machine
 
 pp = PrettyPrinter(indent=2)
 
@@ -62,6 +63,6 @@ def test_scxml(scxml_source, scxml_test_source):
                 assert sorted(
                     [sn.key for sn in state.configuration if sn.type == "atomic"]
                 ) == sorted(next_configuration)
-    except:
+    except Exception:
         pp.pprint(machine.config)
         raise

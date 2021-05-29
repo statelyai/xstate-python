@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import List, Optional, Union, Any, NamedTuple, Callable, TYPE_CHECKING
+
+from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Union
+
 from xstate.action import Action
 from xstate.event import Event
 

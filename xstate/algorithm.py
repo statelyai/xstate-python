@@ -1,9 +1,11 @@
 from __future__ import annotations
-from typing import List, Set, Dict, Optional, Tuple, Union, TYPE_CHECKING
-from xstate.transition import Transition
-from xstate.state_node import StateNode
+
+from typing import Dict, List, Optional, Set, Tuple, Union
+
 from xstate.action import Action
 from xstate.event import Event
+from xstate.state_node import StateNode
+from xstate.transition import Transition
 
 HistoryValue = Dict[str, Set[StateNode]]
 
@@ -36,7 +38,7 @@ def compute_entry_set(
             )
 
 
-def add_descendent_states_to_enter(
+def add_descendent_states_to_enter(  # noqa C901 too complex. TODO: simplify function
     state: StateNode,
     states_to_enter: Set[StateNode],
     states_for_default_entry: Set[StateNode],
@@ -138,14 +140,6 @@ def is_descendent(state: StateNode, state2: StateNode) -> bool:
     return marker.parent == state2
 
 
-# function getTransitionDomain(t)
-#     tstates = getEffectiveTargetStates(t)
-#     if not tstates:
-#         return null
-#     elif t.type == "internal" and isCompoundState(t.source) and tstates.every(lambda s: isDescendant(s,t.source)):
-#         return t.source
-#     else:
-#         return findLCCA([t.source].append(tstates))
 def get_transition_domain(
     transition: Transition, history_value: HistoryValue
 ) -> StateNode:
@@ -189,13 +183,6 @@ def get_effective_target_states(
     return targets
 
 
-# procedure addAncestorStatesToEnter(state, ancestor, statesToEnter, statesForDefaultEntry, defaultHistoryContent)
-#     for anc in getProperAncestors(state,ancestor):
-#         statesToEnter.add(anc)
-#         if isParallelState(anc):
-#             for child in getChildStates(anc):
-#                 if not statesToEnter.some(lambda s: isDescendant(s,child)):
-#                     addDescendantStatesToEnter(child,statesToEnter,statesForDefaultEntry, defaultHistoryContent)
 def add_ancestor_states_to_enter(
     state: StateNode,
     ancestor: StateNode,

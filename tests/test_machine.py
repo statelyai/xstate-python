@@ -1,16 +1,11 @@
 from xstate.machine import Machine
-from xstate.state import State
-
 
 lights = Machine(
     {
         "id": "lights",
         "initial": "green",
         "states": {
-            "green": {
-                "on": {"TIMER": "yellow"},
-                "entry": [{"type": "enterGreen"}]
-            },
+            "green": {"on": {"TIMER": "yellow"}, "entry": [{"type": "enterGreen"}]},
             "yellow": {"on": {"TIMER": "red"}},
             "red": {
                 "initial": "walk",
@@ -38,7 +33,6 @@ def test_machine():
 
 
 def test_machine_initial_state():
-    state = lights.initial_state
 
     assert lights.initial_state.value == "green"
 

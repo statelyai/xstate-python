@@ -1,9 +1,9 @@
 from __future__ import annotations
-from typing import Dict, TYPE_CHECKING, Optional, Union, List
-from enum import Enum
 
-from xstate.transition import Transition
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
+
 from xstate.action import Action
+from xstate.transition import Transition
 
 if TYPE_CHECKING:
     from xstate.machine import Machine
@@ -120,7 +120,7 @@ class StateNode:
 
         if not state_node:
             raise ValueError(
-                f"Relative state node '{target}' does not exist on state node '#{self.id}'"
+                f"Relative state node '{target}' does not exist on state node '#{self.id}'"  # noqa
             )
 
         return state_node

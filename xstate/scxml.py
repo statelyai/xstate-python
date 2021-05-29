@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 from typing import Optional
-import json
+
 import js2py
 
 from xstate.machine import Machine
@@ -9,7 +9,6 @@ ns = {"scxml": "http://www.w3.org/2005/07/scxml"}
 
 
 def convert_scxml(element: ET.Element, parent):
-    states = element.findall("scxml:state", namespaces=ns)
     state_els = element.findall("scxml:state", namespaces=ns)
     parallel_els = element.findall("scxml:parallel", namespaces=ns)
     all_state_els = state_els + parallel_els
@@ -41,7 +40,6 @@ def accumulate_states(element: ET.Element, parent: ET.Element):
 
 
 def convert_state(element: ET.Element, parent: ET.Element):
-    parent_id = parent.attrib.get("id", "") if parent else None
     id = element.attrib.get("id")
     transition_els = element.findall("scxml:transition", namespaces=ns)
     transitions = [convert_transition(el, element) for el in transition_els]
