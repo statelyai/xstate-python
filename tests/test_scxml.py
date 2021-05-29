@@ -1,9 +1,11 @@
-import xml.etree.ElementTree as ET
-from typing import Optional, Dict, List
 import json
-import pytest
-from xstate.scxml import scxml_to_machine
+import xml.etree.ElementTree as ET
 from pprint import PrettyPrinter
+from typing import Dict, List, Optional
+
+import pytest
+
+from xstate.scxml import scxml_to_machine
 
 pp = PrettyPrinter(indent=2)
 

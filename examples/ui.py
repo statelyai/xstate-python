@@ -6,6 +6,7 @@ import sys
 sys.path.insert(0, "..")
 
 import tkinter
+
 from xstate import Machine
 
 

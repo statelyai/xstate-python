@@ -1,6 +1,7 @@
+import json
 import xml.etree.ElementTree as ET
 from typing import Optional
-import json
+
 import js2py
 
 from xstate.machine import Machine

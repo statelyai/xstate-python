@@ -1,9 +1,11 @@
 from __future__ import annotations
-from typing import List, Set, Dict, Optional, Tuple, Union, TYPE_CHECKING
-from xstate.transition import Transition
-from xstate.state_node import StateNode
+
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
+
 from xstate.action import Action
 from xstate.event import Event
+from xstate.state_node import StateNode
+from xstate.transition import Transition
 
 HistoryValue = Dict[str, Set[StateNode]]
 

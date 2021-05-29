@@ -1,13 +1,10 @@
 from typing import Dict, List
-from xstate.state_node import StateNode
-from xstate.state import State
-from xstate.algorithm import (
-    enter_states,
-    get_configuration_from_state,
-    main_event_loop,
-    macrostep,
-)
+
+from xstate.algorithm import (enter_states, get_configuration_from_state,
+                              macrostep, main_event_loop)
 from xstate.event import Event
+from xstate.state import State
+from xstate.state_node import StateNode
 
 
 class Machine:

@@ -1,7 +1,6 @@
 from xstate.machine import Machine
 from xstate.state import State
 
-
 lights = Machine(
     {
         "id": "lights",

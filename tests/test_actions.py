@@ -1,6 +1,7 @@
+from unittest.mock import Mock
+
 from xstate.machine import Machine
 from xstate.state import State
-from unittest.mock import Mock
 
 
 def test_action():

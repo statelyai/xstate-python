@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from xstate import Machine
 import time
+
+from xstate import Machine
 
 # Trafic light example
 # green -> yellow -> red -> green ..
