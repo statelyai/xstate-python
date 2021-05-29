@@ -27,5 +27,9 @@ class State:
 
     def __repr__(self):
         return repr(
-            {"value": self.value, "context": self.context, "actions": self.actions,}
+            {
+                "value": self.value,
+                "context": self.context,
+                "actions": self.actions,
+            }
         )

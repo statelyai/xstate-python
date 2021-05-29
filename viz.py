@@ -4,27 +4,18 @@ from plantweb.render import render
 from xstate.machine import Machine
 
 # just a test
-simple_machine = Machine({
-    "id": "simple",
-    "initial": "green",
-    "states": {
-        "green": {
-            "on": {
-                "JENNY_EVENT": "yellow"
-            }
+simple_machine = Machine(
+    {
+        "id": "simple",
+        "initial": "green",
+        "states": {
+            "green": {"on": {"JENNY_EVENT": "yellow"}},
+            "yellow": {"on": {"NEXT_EVENT": "red"}},
+            "red": {"on": {"NEXT_EVENT": "green"}},
         },
-        "yellow": {
-            "on": {
-                "NEXT_EVENT": "red"
-            }
-        },
-        "red": {
-            "on": {
-                "NEXT_EVENT": "green"
-            }
-        }
     }
-})
+)
+
 
 def state_node_to_viz(state_node):
     result = ""
@@ -56,23 +47,21 @@ skinparam state {
     for c in children:
         child_string = state_node_to_viz(c)
         result += child_string
-        
+
     if not state_node.parent:
         result += "@enduml\n"
 
     return result
-    
-    
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     output = render(
         state_node_to_viz(simple_machine.root),
-        engine='plantuml',
-        format='svg',
-        cacheopts={
-            'use_cache': False
-        }
+        engine="plantuml",
+        format="svg",
+        cacheopts={"use_cache": False},
     )[0]
 
-    file1 = open('test.svg', 'w') 
+    file1 = open("test.svg", "w")
     file1.write(output.decode("utf-8"))
     file1.close()
