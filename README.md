@@ -29,24 +29,29 @@ state = lights.transition(state, "TIMER") # state.value is green again
 
 More advanced examples in [the "examples" folder](./examples)
 
-## Testing
+## Developing
 
 You can set up your development environment in two different ways. 
 
-### Using [VS Code Remote Containers](https://code.visualstudio.com/docs/remote/containers)
+### Using [Remote Containers](https://code.visualstudio.com/docs/remote/containers) (recommended if you use VS Code)
 
-Note this requires VS Code and the Remote Containers extension (which uses Docker containers)
+Prerequisites 
+* VS Code IDE and [Remote Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)
+
+Steps
 
 1. [Open the folder in a container](https://code.visualstudio.com/docs/remote/containers#_quick-start-open-an-existing-folder-in-a-container). This will setup your environment with python (including python and pylance extensions), dependencies and download scxml tests.
-1. Run `pytest` to run the tests! 👩‍🔬 (or run the `Run tests` task via VS Code)
+1. Run `poetry run pytest --cov` to run the tests! 👩‍🔬 (or run the `Run tests` task via VS Code or using VS Code Test explorer where you can debug as well)
 
-### Or on local drive
+### Or installing the environment on your local drive
 
-1. Run `python3.7 -m venv .venv` to create a virtual environment
-1. Run `source .venv/bin/activate` to go into that virtual environment
-1. Run `pip install -r requirements_dev.txt` to install all of the dependencies in `requirements.txt` (which includes `pytest`)
+Prerequisites 
+* [`poetry`](https://python-poetry.org/) for package and dependency management
+
+Steps
+1. Run `poetry install` to create a virtual environment
 1. Make sure test files are present and up to date by running `git submodule init` (first time) and `git submodule update`
-1. Run `pytest` to run the tests! 👩‍🔬 (or run the `Run tests` task via VS Code)
+1. Run `poetry run pytest --cov` to run the tests! 👩‍🔬 (or run the `Run tests` task via VS Code or using VS Code Test explorer where you can debug as well)
 
 ## SCXML
 

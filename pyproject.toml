@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "xstate"
+version = "0.0.1"
+description = "XState for Python"
+readme = "README.md"
+authors = ["David Khourshid <davidkpiano@gmail.com>"]
+license = "MIT"
+keywords = ["Answer Set Programming", "wrapper", "clingo"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7"
+]
+
+[tool.poetry.urls]
+docs = "https://github.com/davidkpiano/xstate-python"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+Js2Py = "^0.71"
+
+[tool.poetry.dev-dependencies]
+pytest-cov = "^2.12.0"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[tool.coverage.run]
+source = ["xstate"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "# noqa",
+    "raise NotImplementedError"
+]
+fail_under = 50
+show_missing = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

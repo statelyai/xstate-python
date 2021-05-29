@@ -6,7 +6,7 @@
         {
             "label": "Run tests",
             "type": "shell",
-            "command": "pytest",
+            "command": "poetry run pytest --cov",
             "problemMatcher": []
         }
     ]
