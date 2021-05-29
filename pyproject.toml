@@ -14,6 +14,9 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9"
 ]
+packages = [
+    { include = "xstate" },
+]
 
 [tool.poetry.urls]
 docs = "https://github.com/davidkpiano/xstate-python"
