@@ -25,6 +25,7 @@ Js2Py = "^0.71"
 [tool.poetry.dev-dependencies]
 pytest-cov = "^2.12.0"
 black = "^21.5b1"
+isort = "^5.8.0"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
