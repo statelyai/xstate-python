@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from xstate.action import Action
@@ -11,8 +9,8 @@ if TYPE_CHECKING:
 
 class StateNode:
     on: Dict[str, List[Transition]]
-    machine: Machine
-    parent: Optional[StateNode]
+    machine: "Machine"
+    parent: Optional["StateNode"]
     initial: Optional[Transition]
     entry: List[Action]
     exit: List[Action]
@@ -21,7 +19,7 @@ class StateNode:
     transitions: List[Transition]
     id: str
     key: str
-    states: Dict[str, StateNode]
+    states: Dict[str, "StateNode"]
 
     def get_actions(self, action):
         if callable(action):
@@ -33,9 +31,9 @@ class StateNode:
         self,
         # { "type": "compound", "states": { ... } }
         config,
-        machine: Machine,
+        machine: "Machine",
         key: str,
-        parent: Union[StateNode, Machine] = None,
+        parent: Union["StateNode", "Machine"] = None,
     ):
         self.config = config
         self.parent = parent
@@ -112,7 +110,7 @@ class StateNode:
                 self.states.get(initial_key), source=self, event=None, order=-1
             )
 
-    def _get_relative(self, target: str) -> StateNode:
+    def _get_relative(self, target: str) -> "StateNode":
         if target.startswith("#"):
             return self.machine._get_by_id(target[1:])
 

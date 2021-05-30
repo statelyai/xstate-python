@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Union
 
 from xstate.action import Action
@@ -17,8 +15,8 @@ class TransitionConfig(NamedTuple):
 
 class Transition:
     event: str
-    source: StateNode
-    config: Union[str, StateNode, TransitionConfig]
+    source: "StateNode"
+    config: Union[str, "StateNode", TransitionConfig]
     actions: List[Action]
     cond: Optional[CondFunction]
     order: int
@@ -28,7 +26,7 @@ class Transition:
     def __init__(
         self,
         config,
-        source: StateNode,
+        source: "StateNode",
         event: str,
         order: int,
         cond: Optional[CondFunction] = None,
@@ -52,7 +50,7 @@ class Transition:
         )
 
     @property
-    def target(self) -> List[StateNode]:
+    def target(self) -> List["StateNode"]:
         if isinstance(self.config, str):
             return [self.source._get_relative(self.config)]
         elif isinstance(self.config, dict):
