@@ -50,7 +50,7 @@ Prerequisites
 
 Steps
 1. Run `poetry install` to create a virtual environment
-1. Make sure test files are present and up to date by running `git submodule init` (first time) and `git submodule update`
+1. Make sure test files are present and up to date by running `git submodule update --init`
 1. Run `poetry run pytest --cov` to run the tests! 👩‍🔬 (or run the `Run tests` task via VS Code or using VS Code Test explorer where you can debug as well)
 
 ## SCXML
