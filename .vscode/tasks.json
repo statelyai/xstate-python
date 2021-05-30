@@ -14,6 +14,12 @@
             "type": "shell",
             "command": "poetry run black . && poetry run isort .",
             "problemMatcher": []
-        }
+        },
+        {
+            "label": "Check code-quality",
+            "type": "shell",
+            "command": "poetry run black . --check && poetry run isort . --check-only && poetry run flake8",
+            "problemMatcher": []
+        },
     ]
 }

@@ -29,7 +29,7 @@ lights = Machine(
                 "exit": [{"type": "exitGreen"}],
             },
             "yellow": {
-                "on": {"TIMER": "red"}, 
+                "on": {"TIMER": "red"},
                 "entry": [{"type": "enterYellow"}]
             },
             "red": {
