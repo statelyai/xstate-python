@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Dict, List, Optional, Set, Tuple, Union
 
 from xstate.action import Action
