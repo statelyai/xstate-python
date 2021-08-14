@@ -89,3 +89,22 @@ def test_history_state():
     on_second_state = fan.transition(off_state, "POWER")
 
     assert on_second_state.value == "fanOn.second"
+
+
+
+final = Machine(
+    {
+        "id": "final",
+        "initial": "start",
+        "states": {
+            "start": {"on": {"FINISH": "end"}},
+            "end": {"type": "final"},
+        },
+    }
+)
+
+
+def test_top_level_final():
+    end_state = final.transition(final.initial_state, "FINISH")
+
+    assert end_state.value == "end"
