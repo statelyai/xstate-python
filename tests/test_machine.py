@@ -92,19 +92,19 @@ def test_history_state():
 
 
 
-final = Machine(
-    {
-        "id": "final",
-        "initial": "start",
-        "states": {
-            "start": {"on": {"FINISH": "end"}},
-            "end": {"type": "final"},
-        },
-    }
-)
-
 
 def test_top_level_final():
+    final = Machine(
+        {
+            "id": "final",
+            "initial": "start",
+            "states": {
+                "start": {"on": {"FINISH": "end"}},
+                "end": {"type": "final"},
+            },
+        }
+    )
+    
     end_state = final.transition(final.initial_state, "FINISH")
 
     assert end_state.value == "end"
