@@ -289,7 +289,7 @@ def enter_states(
             grandparent = parent.parent
             internal_queue.append(Event(f"done.state.{parent.id}", s.donedata))
 
-            if is_parallel_state(grandparent):
+            if grandparent and is_parallel_state(grandparent):
                 if all(
                     is_in_final_state(parent_state, configuration)
                     for parent_state in get_child_states(grandparent)
