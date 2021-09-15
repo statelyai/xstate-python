@@ -62,3 +62,4 @@ SCXML tests are ran from [the SCION Test Framework](./node_modules/@scion-scxml/
 - [finite-state-machine](https://github.com/alysivji/finite-state-machine)
 - [Sismic for Python](https://github.com/AlexandreDecan/sismic)
 - [Miros](https://github.com/aleph2c/miros)
+- [Automat](https://github.com/glyph/automat)
