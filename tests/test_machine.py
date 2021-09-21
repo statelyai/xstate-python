@@ -57,7 +57,7 @@ fan = Machine(
                     # "POWER": "fanOn.first",
                     # "HIGH_POWER": "fanOn.third",
                     "POWER": "fanOn",
-                    "HIGH_POWER": "fanOn",
+                    "HIGH_POWER": {"fanOn": "third"},
 
                 },
             },
