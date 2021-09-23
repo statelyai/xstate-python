@@ -1,17 +1,34 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from xstate.algorithm import (
     enter_states,
     get_configuration_from_state,
     macrostep,
     main_event_loop,
+    # get_configuration_from_js
 )
+# TODO: Work around for import error, don't know why lint unresolved, if import from xstate.algorthim we get import error in `transitions.py`
+# Explain : ImportError: cannot import name 'get_configuration_from_js' from 'xstate.algorithm' 
+from xstate.utils import (
+    get_configuration_from_js
+)
+
+
 from xstate.event import Event
-from xstate.state import State
+from xstate.state import State, StateType
 from xstate.state_node import StateNode
 
 
 class Machine:
+    """[summary]
+
+    Raises:
+        f: [description]
+        ValueError: [description]
+
+    Returns:
+        [type]: [description]
+    """
     id: str
     root: StateNode
     _id_map: Dict[str, StateNode]
@@ -19,18 +36,36 @@ class Machine:
     states: Dict[str, StateNode]
     actions: List[lambda: None]
 
-    def __init__(self, config: object, actions={}):
-        self.id = config["id"]
+    def __init__(self, config: Union[Dict,str], actions={}):
+        """[summary]
+
+        Args:
+            config ( Union[Dict,str]): A machine configuration either str snippet in Javascript  or dict
+            actions (dict, optional): A set of Actions. Defaults to {}.
+
+        Raises:
+            Exception: Invalid snippet of Javascript for Machine configuration
+        """
+        if isinstance(config,str):
+            try:
+                config = get_configuration_from_js(config)
+            except Exception as e:
+                raise f"Invalid snippet of Javascript for Machine configuration, Exception:{e}"
+        
+        self.id = config.get("id", "(machine)")
         self._id_map = {}
         self.root = StateNode(
-            config, machine=self, key=config.get("id", "(machine)"), parent=None
+            config, machine=self, key=self.id, parent=None
         )
         self.states = self.root.states
         self.config = config
         self.actions = actions
 
-    def transition(self, state: State, event: str):
-        configuration = get_configuration_from_state(
+    def transition(self, state: StateType, event: str):
+        # BUG state could be an `id` of type  `str` representing 
+        if isinstance(state,str):
+            state = get_state(state)
+        configuration = get_configuration_from_state( #TODO DEBUG FROM HERE
             from_node=self.root, state_value=state.value, partial_configuration=set()
         )
         (configuration, _actions) = main_event_loop(configuration, Event(event))
