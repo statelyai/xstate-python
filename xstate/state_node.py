@@ -123,5 +123,13 @@ class StateNode:
 
         return state_node
 
+    # TODO: __repr__ and __str__ should be swapped,  __repr__ should be able to instantiate an instance
+    # def __repr__(self) -> str:
+    #      return "<StateNode %s>" % repr({"id": self.id})
     def __repr__(self) -> str:
-        return "<StateNode %s>" % repr({"id": self.id})
+         return "<StateNode %s>" % repr({"id": self.id, "parent": self.parent})
+    def __str__(self) -> str:
+        return (
+            f"""{self.__class__.__name__}(config={'<WIP a Set["StateNode"]>'}, """ 
+            f"""machine={self.machine}, id={self.id}, parent={self.parent})"""
+        )
