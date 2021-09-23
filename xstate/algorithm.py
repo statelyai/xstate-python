@@ -1,9 +1,13 @@
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import  Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from xstate.action import Action
 from xstate.event import Event
 from xstate.state_node import StateNode
 from xstate.transition import Transition
+
+# TODO: Work around for import error, don't know why lint unresolved, if import from xstate.algorthim we get import error in `transitions.py`
+#  Using `from xtate.utils import get_configuration_from_js`  see commented out `get_configuration_from_js` in this module
+# import js2py
 
 HistoryValue = Dict[str, Set[StateNode]]
 
@@ -592,3 +596,62 @@ def get_value_from_adj(state_node: StateNode, adj_list: Dict[str, Set[StateNode]
         state_value[s.key] = get_value_from_adj(s, adj_list)
 
     return state_value
+
+def  map_values(collection: Dict[str,Any], iteratee: Callable):
+  result = {}
+  collectionKeys = collection.keys()
+
+  for i,key in enumerate(collection.keys()):
+    args = (collection[key], key, collection, i)
+    result[key] = iteratee(*args)
+ 
+  return result
+
+
+def update_history_states(hist, state_value):
+  
+  def lambda_function(sub_hist, key):
+    if not sub_hist:
+        return None
+
+
+    sub_state_value = None  if isinstance(state_value, str) else  (state_value[key] or (sub_hist.current if sub_hist else None))
+
+    if not sub_state_value:
+      return None
+    
+
+    return {
+      "current": sub_state_value,
+      "states": update_history_states(sub_hist, sub_state_value)
+    }
+  return map_values(hist.states, lambda sub_hist, key : lambda_function(sub_hist, key))
+
+def update_history_value(hist, state_value):
+  return {
+    "current": state_value,
+    "states": update_history_states(hist, state_value)
+  }
+# TODO: Work around for import error, don't know why lint unresolved, if import from xstate.algorthim we get import error in `transitions.py`
+# Explain : ImportError: cannot import name 'get_configuration_from_js' from 'xstate.algorithm' 
+# Using `from xtate.utils import get_configuration_from_js` 
+# def get_configuration_from_js(config:str) -> dict: 
+#     """Translates a JS config to a xstate_python configuration dict
+#     config: str  a valid javascript snippet of an xstate machine
+#     Example
+#         get_configuration_from_js(
+#             config=
+#             ```
+#               {
+#                 a: 'a2',
+#                 b: {
+#                   b2: {
+#                     foo: 'foo2',
+#                     bar: 'bar1'
+#                   }
+#                 }
+#               }
+#             ```)
+#         )
+#     """
+#     return js2py.eval_js(f"config = {config.replace(chr(10),'').replace(' ','')}").to_dict()
