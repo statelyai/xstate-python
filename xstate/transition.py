@@ -1,11 +1,6 @@
 from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Union
 
-# from xstate.algorithm import (
-#     get_configuration_from_js
-# )
-# TODO: Work around for import error, don't know why lint unresolved, if import from xstate.algorthim
-# Explain : ImportError: cannot import name 'get_configuration_from_js' from 'xstate.algorithm' 
-from xstate.utils import (
+from xstate.algorithm import (
     get_configuration_from_js
 )
 

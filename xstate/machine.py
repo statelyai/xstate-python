@@ -1,22 +1,18 @@
-from typing import Dict, List, Union
+from __future__ import annotations #  PEP 563:__future__.annotations will become the default in Python 3.11
+from typing import TYPE_CHECKING, Dict, List, Union
 
 from xstate.algorithm import (
     enter_states,
     get_configuration_from_state,
     macrostep,
     main_event_loop,
-    # get_configuration_from_js
-)
-# TODO: Work around for import error, don't know why lint unresolved, if import from xstate.algorthim we get import error in `transitions.py`
-# Explain : ImportError: cannot import name 'get_configuration_from_js' from 'xstate.algorithm' 
-from xstate.utils import (
     get_configuration_from_js
 )
-
-
-from xstate.event import Event
-from xstate.state import State, StateType
-from xstate.state_node import StateNode
+if TYPE_CHECKING:
+    from xstate.state import State
+    from xstate.event import Event
+    from xstate.state import State, StateType
+    from xstate.state_node import StateNode
 
 
 class Machine:
@@ -62,11 +58,12 @@ class Machine:
         self.actions = actions
 
     def transition(self, state: StateType, event: str):
-        # BUG state could be an `id` of type  `str` representing 
-        if isinstance(state,str):
-            state = get_state(state)
+        # BUG state could be an `id` of type  `str` representing a state
+        # if isinstance(state,str):
+        #     state = get_state(state)
+        # BUG get_configuration_from_state should handle a str, state_value should be deterimed in the function
         configuration = get_configuration_from_state( #TODO DEBUG FROM HERE
-            from_node=self.root, state_value=state.value, partial_configuration=set()
+            from_node=self.root, state=state, partial_configuration=set()
         )
         (configuration, _actions) = main_event_loop(configuration, Event(event))
 

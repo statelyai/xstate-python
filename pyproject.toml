@@ -24,6 +24,7 @@ docs = "https://github.com/davidkpiano/xstate-python"
 [tool.poetry.dependencies]
 python = "^3.6.2"
 Js2Py = "^0.71"
+anytree = "^2.8.0"
 
 [tool.poetry.dev-dependencies]
 pytest-cov = "^2.12.0"

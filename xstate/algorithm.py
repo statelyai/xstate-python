@@ -1,15 +1,24 @@
-from typing import  Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from __future__ import annotations #  PEP 563:__future__.annotations will become the default in Python 3.11
+from typing import  TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
-from xstate.action import Action
-from xstate.event import Event
-from xstate.state_node import StateNode
-from xstate.transition import Transition
 
-# TODO: Work around for import error, don't know why lint unresolved, if import from xstate.algorthim we get import error in `transitions.py`
-#  Using `from xtate.utils import get_configuration_from_js`  see commented out `get_configuration_from_js` in this module
-# import js2py
+# TODO: why does this cause pytest to fail, ImportError: cannot import name 'get_state_value' from 'xstate.algorithm' 
+# Workaround: supress import and in `get_configuration_from_state` put state: [Dict,str]
+# from xstate.state import StateType
 
-HistoryValue = Dict[str, Set[StateNode]]
+if TYPE_CHECKING:
+    from xstate.action import Action
+    from xstate.event import Event
+    from xstate.transition import Transition
+    from xstate.state_node import StateNode
+    from xstate.state import State
+    from xstate.state import StateType
+    HistoryValue = Dict[str, Set[StateNode]]
+
+
+
+import js2py
+
 
 
 def compute_entry_set(
@@ -542,18 +551,36 @@ def microstep(
 
 def get_configuration_from_state(
     from_node: StateNode,
-    state_value: Union[Dict, str],
+    state: Union[Dict, str],
+    # state: Union[Dict, StateType],
+
     partial_configuration: Set[StateNode],
 ) -> Set[StateNode]:
-    if isinstance(state_value, str):
-        partial_configuration.add(from_node.states.get(state_value))
-    else:
-        for key in state_value.keys():
+    if isinstance(state, str):
+        state=from_node.states.get(state)
+        partial_configuration.add(state)
+    elif isinstance(state,dict):
+        for key in state.keys():
             node = from_node.states.get(key)
             partial_configuration.add(node)
             get_configuration_from_state(
-                node, state_value.get(key), partial_configuration
+                node, state.get(key), partial_configuration
             )
+    elif str(type(state))=="<class 'xstate.state.State'>":
+        for state_node in state.configuration:
+            node = from_node.states.get(state_node.key)
+            partial_configuration.add(node)
+            get_configuration_from_state(
+                node, state_node, partial_configuration
+            )
+    elif str(type(state))=="<class 'xstate.state_node.StateNode'>":
+        for key in state.config.keys():
+            node = from_node.states.get(key)
+            partial_configuration.add(node)
+            get_configuration_from_state(
+                node, state.config.get(key), partial_configuration
+            )
+
 
     return partial_configuration
 
@@ -576,6 +603,69 @@ def get_adj_list(configuration: Set[StateNode]) -> Dict[str, Set[StateNode]]:
 
 def get_state_value(state_node: StateNode, configuration: Set[StateNode]):
     return get_value_from_adj(state_node, get_adj_list(configuration))
+
+
+def  to_state_path(state_id: str, delimiter: str=".") -> List[str]:
+  try:
+    if isinstance(state_id,List):
+        return state_id
+
+    return state_id.split(delimiter)
+  except Exception as e:
+      raise Exception(f"{state_id} is not a valid state path")
+    
+  
+def is_state_like(state: any)-> bool: 
+  return (
+    isinstance(state, object)
+    and 'value' in vars(state)
+    and 'context' in vars(state)
+    # TODO : Eventing to be enabled sometime
+    # and 'event' in vars(state)
+    # and '_event' in vars(state)
+  )
+
+
+# export function toStateValue(
+#   stateValue: StateLike<any> | StateValue | string[],
+#   delimiter: string
+# ): StateValue {
+#   if (isStateLike(stateValue)) {
+#     return stateValue.value;
+#   }
+
+#   if (isArray(stateValue)) {
+#     return pathToStateValue(stateValue);
+#   }
+
+#   if (typeof stateValue !== 'string') {
+#     return stateValue as StateValue;
+#   }
+
+#   const statePath = toStatePath(stateValue as string, delimiter);
+
+#   return pathToStateValue(statePath);
+# }
+
+# export function pathToStateValue(statePath: string[]): StateValue {
+#   if (statePath.length === 1) {
+#     return statePath[0];
+#   }
+
+#   const value = {};
+#   let marker = value;
+
+#   for (let i = 0; i < statePath.length - 1; i++) {
+#     if (i === statePath.length - 2) {
+#       marker[statePath[i]] = statePath[i + 1];
+#     } else {
+#       marker[statePath[i]] = {};
+#       marker = marker[statePath[i]];
+#     }
+#   }
+
+#   return value;
+# }
 
 
 def get_value_from_adj(state_node: StateNode, adj_list: Dict[str, Set[StateNode]]):
@@ -632,26 +722,25 @@ def update_history_value(hist, state_value):
     "current": state_value,
     "states": update_history_states(hist, state_value)
   }
-# TODO: Work around for import error, don't know why lint unresolved, if import from xstate.algorthim we get import error in `transitions.py`
-# Explain : ImportError: cannot import name 'get_configuration_from_js' from 'xstate.algorithm' 
-# Using `from xtate.utils import get_configuration_from_js` 
-# def get_configuration_from_js(config:str) -> dict: 
-#     """Translates a JS config to a xstate_python configuration dict
-#     config: str  a valid javascript snippet of an xstate machine
-#     Example
-#         get_configuration_from_js(
-#             config=
-#             ```
-#               {
-#                 a: 'a2',
-#                 b: {
-#                   b2: {
-#                     foo: 'foo2',
-#                     bar: 'bar1'
-#                   }
-#                 }
-#               }
-#             ```)
-#         )
-#     """
-#     return js2py.eval_js(f"config = {config.replace(chr(10),'').replace(' ','')}").to_dict()
+
+
+def get_configuration_from_js(config:str) -> dict: 
+    """Translates a JS config to a xstate_python configuration dict
+    config: str  a valid javascript snippet of an xstate machine
+    Example
+        get_configuration_from_js(
+            config=
+            ```
+              {
+                a: 'a2',
+                b: {
+                  b2: {
+                    foo: 'foo2',
+                    bar: 'bar1'
+                  }
+                }
+              }
+            ```)
+        )
+    """
+    return js2py.eval_js(f"config = {config.replace(chr(10),'').replace(' ','')}").to_dict()

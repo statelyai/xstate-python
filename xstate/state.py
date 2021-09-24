@@ -1,3 +1,4 @@
+from __future__ import annotations #  PEP 563:__future__.annotations will become the default in Python 3.11
 from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
 from xstate.transition import Transition
 
@@ -9,6 +10,7 @@ if TYPE_CHECKING:
     # TODO WIP (history) - 
     # from xstate.???? import History
 
+from anytree import Node, RenderTree,LevelOrderIter
 
 
 class State:
@@ -55,6 +57,46 @@ class State:
             }
         )
     def __str__(self):
-        return f"""{self.__class__.__name__}(configuration={'<WIP a Set["StateNode"]>'}, context={self.context} , actions={self.actions})"""
+        # configuration is a set, we need an algorithim to walk the set and produce an ordered list
+        #Why:  [state.id for state in self.configuration]    # produces unsorted with machine prefix `['test_states.two.deep', 'test_states.two', 'test_states.two.deep.foo']`
+
+
+        # build dict of child:parent
+        relationships = {state.id:state.parent.id if state.parent else None for state in self.configuration}
+        # find root node, ie has parent and without a '.' in the parent id 
+        roots = [(child,parent) for child,parent in relationships.items() if parent and '.' not in parent ]
+        assert len(roots) ==1, 'Invalid Root, can only be 1 root and must be at least 1 root'
+
+        relatives = {child:parent for child,parent in relationships.items() if parent and '.' in parent}
+        child,parent = roots[0]
+        root_node = Node(parent)
+        added={}
+        added[child] = Node(child, parent=root_node)
+        while relatives:
+            for child, parent in relatives.items():
+                if parent in added:
+                    
+                    added[child]=Node(child, parent=added[parent])
+                    relatives.pop(child)
+                    break
+                # Should have no parent as None, because we have already determined the root
+                # TODO: possible should change to this as more general
+                # elif parent  is None:
+                #     tree.create_node(key, key)
+                #     added.add(key)
+                #     relatives.pop(key)
+                #     break
+        # Render in ascii the tree
+        # for pre, fill, node in RenderTree(root_node):
+        #     print("%s%s" % (pre, node.name))
+
+        states_ordered = [node.name for node in LevelOrderIter(root_node)]
+        root_state=states_ordered[0]+"."
+        #ignore the root state
+        states_ordered = [state.replace(root_state,"") for state in states_ordered[1:]]
+        return repr(states_ordered)
+
+        # return f"""{self.__class__.__name__}(configuration={'<WIP a Set["StateNode"]>'}, context={self.context} , actions={self.actions})"""
 
 StateType = Union[str, State]
+StateValue = str
