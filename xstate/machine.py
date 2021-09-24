@@ -8,10 +8,12 @@ from xstate.algorithm import (
     main_event_loop,
     get_configuration_from_js
 )
+
 if TYPE_CHECKING:
     from xstate.state import State
-    from xstate.event import Event
     from xstate.state import StateType
+
+from xstate.event import Event
 from xstate.state import State
 from xstate.state_node import StateNode
 

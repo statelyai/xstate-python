@@ -8,13 +8,15 @@ from typing import  TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tup
 
 if TYPE_CHECKING:
     from xstate.action import Action
-    from xstate.event import Event
     from xstate.transition import Transition
     from xstate.state_node import StateNode
-    from xstate.state import State
     from xstate.state import StateType
+
     HistoryValue = Dict[str, Set[StateNode]]
 
+    from xstate.state import State
+
+from xstate.event import Event
 
 
 import js2py
@@ -550,6 +552,29 @@ def microstep(
 
 
 def get_configuration_from_state(
+    from_node: StateNode,
+    state: Union[State, Dict, str],
+    partial_configuration: Set[StateNode],
+) -> Set[StateNode]:
+    # TODO TD: isinstance(state,State) requires import which generates circular dependencie issues
+    if str(type(state))=="<class 'xstate.state.State'>":
+        state_value=state.value
+    else:
+        state_value = state
+    if isinstance(state_value, str):
+        partial_configuration.add(from_node.states.get(state_value))
+    else:
+        for key in state_value.keys():
+            node = from_node.states.get(key)
+            partial_configuration.add(node)
+            get_configuration_from_state(
+                node, state_value.get(key), partial_configuration
+            )
+
+    return partial_configuration
+
+# TODO REMOVE an try and resolving some test cases
+def DEV_get_configuration_from_state(
     from_node: StateNode,
     state: Union[Dict, str],
     # state: Union[Dict, StateType],
