@@ -11,8 +11,9 @@ from xstate.algorithm import (
 if TYPE_CHECKING:
     from xstate.state import State
     from xstate.event import Event
-    from xstate.state import State, StateType
-    from xstate.state_node import StateNode
+    from xstate.state import StateType
+from xstate.state import State
+from xstate.state_node import StateNode
 
 
 class Machine:

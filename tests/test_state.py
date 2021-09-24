@@ -11,7 +11,7 @@ The following tests exist
     * xxx - the ....
 """
 import pytest
-from xstate.utils import (
+from xstate.algorithm import (
     get_configuration_from_js
 )
 # from xstate.algorithm import is_parallel_state
