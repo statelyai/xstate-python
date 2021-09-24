@@ -8,7 +8,12 @@ The following tests exist
     * test_is_parallel_state - returns the column headers of the file
     * test_is_not_parallel_state - the main function of the script
 """
-from xstate.algorithm import is_parallel_state
+
+import pytest
+from .utils_for_tests import pytest_func_docstring_summary
+
+
+from xstate.algorithm import is_parallel_state, to_state_path
 from xstate.machine import Machine
 
 
@@ -77,3 +82,21 @@ def test_is_not_parallel_state():
     foo_state_node = machine._get_by_id("test.foo")
 
     assert is_parallel_state(foo_state_node) is False
+
+
+class TestStatePaths:
+    def test__to_state_path(self,request):
+        """ should have valid results for converstion to state paths list 
+
+        """
+        assert to_state_path("one.two.three") == ["one","two","three"]
+        assert to_state_path("one/two/three", delimiter="/") == ["one","two","three"]
+        assert to_state_path(["one","two","three"]) == ["one","two","three"]
+        try:
+            state_id = {"values":["one","two","three"]}
+            assert to_state_path(state_id) == ["one","two","three"]
+        except Exception as e:
+            assert e.args[0] == "{'values': ['one', 'two', 'three']} is not a valid state path"
+
+
+pass
