@@ -33,15 +33,16 @@ class StateNode:
         # { "type": "compound", "states": { ... } }
         config,
         machine: "Machine",
-        key: str,
         parent: Union["StateNode", "Machine"] = None,
+        key: str = None,
+
     ):
         self.config = config
         self.parent = parent
         self.id = (
-            config.get("id", parent.id + "." + key)
+            config.get("id", parent.id + (("." + key) if key else ""))
             if parent
-            else config.get("id", machine.id + "." + key)
+            else config.get("id", machine.id + (("." + key) if key else ""))
         )
         self.entry = (
             [self.get_actions(entry_action) for entry_action in config.get("entry")]
@@ -124,7 +125,7 @@ class StateNode:
 
         return state_node
 
-    # TODO: __repr__ and __str__ should be swapped,  __repr__ should be able to instantiate an instance
+  # TODO: __repr__ and __str__ should be swapped,  __repr__ should be able to instantiate an instance
     # def __repr__(self) -> str:
     #      return "<StateNode %s>" % repr({"id": self.id})
     def __repr__(self) -> str:

@@ -54,7 +54,8 @@ class Machine:
         self.id = config.get("id", "(machine)")
         self._id_map = {}
         self.root = StateNode(
-            config, machine=self, key=self.id, parent=None
+            config, machine=self, 
+            parent=None
         )
         self.states = self.root.states
         self.config = config
