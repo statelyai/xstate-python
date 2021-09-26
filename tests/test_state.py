@@ -58,9 +58,12 @@ machine_xstate_js_config ="""{
         TO_TWO: 'two',
         TO_TWO_MAYBE: {
           target: 'two',
-        /*  cond: function maybe() {
+          /* cond: function maybe() {
             return true;
           }*/
+          cond: function maybe() {
+            return true;
+          }
         },
         TO_THREE: 'three',
         FORBIDDEN_EVENT: undefined,
@@ -124,7 +127,6 @@ machine_xstate_js_config ="""{
   }
 }"""
 xstate_python_config=get_configuration_from_js(machine_xstate_js_config)
-# xstate_python_config['id']="test_states"
 
 #TODO:  machine initialization fail on `if config.get("entry")`` in xstate/state_node.py", line 47, in __init__
 """
@@ -610,6 +612,7 @@ class TestState_transitions:
     1 - should have no transitions for the initial state
     2 - should have transitions for the sent event
     3 - should have condition in the transition
+    4 - should have python callable condition in the transition
     """
     initial_state  = machine.initial_state
 
@@ -637,10 +640,7 @@ class TestState_transitions:
             });
         """
         # xstate_python_config['id']="test_states" # TODO REMOVE ME after debug
-        # new_state_transitions = machine.transition(self.initial_state, 'TO_TWO').transitions
-        initial_state = machine.initial_state
-        new_state = machine.transition(initial_state, 'TO_TWO')
-        new_state_transitions = new_state.transitions
+        new_state_transitions = machine.transition(self.initial_state, 'TO_TWO').transitions
     
         # TODO WIP 21w38 not sure if events are supported 
         assert  (
@@ -662,13 +662,25 @@ class TestState_transitions:
                   cond: expect.objectContaining({ name: 'maybe' })
         """
 
-        new_state_transitions = machine.transition(self.initial_state, 'TO_TWO_MAYBE').transitions
-        assert  (new_state_transitions != [] 
-            and "'eventType': 'TO_TWO_MAYBE'" in repr(new_state_transitions)
-            and "cond" in repr(new_state_transitions)
-            and "{ name: 'maybe' }" in repr(new_state_transitions)
+        # new_state_transitions = machine.transition(self.initial_state, 'TO_TWO_MAYBE').transitions
+        initial_state = machine.initial_state
+        new_state = machine.transition(initial_state, 'TO_TWO_MAYBE')
+        new_state_transitions = new_state.transitions
+        assert  (new_state_transitions != set() 
+            and all([transition.event=='TO_TWO_MAYBE' for transition in new_state_transitions ])
+            and  list(new_state_transitions)[0].cond
+            and repr(list(new_state_transitions)[0].cond) == "'function maybe() { [python code] }'"
+            and list(new_state_transitions)[0].cond()
         ), pytest_func_docstring_summary(request)
 
+    @pytest.mark.skip(reason="Not implemented yet")
+    def test_state_transitions_4(self,request):
+        """ 4 - should have python callable condition in the transition
+        """
+        # TODO: Implement and Test Python callable Transition condition
+        assert (
+            'IMPLEMENTED'=='NOT YET'
+        ), pytest_func_docstring_summary(request)
 class TestState_State_Protoypes:
     """ Test: describe('State.prototype.matches
         

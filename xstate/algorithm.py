@@ -932,4 +932,5 @@ def get_configuration_from_js(config:str) -> dict:
             ```)
         )
     """
-    return js2py.eval_js(f"config = {config.replace(chr(10),'').replace(' ','')}").to_dict()
+    # return js2py.eval_js(f"config = {config.replace(chr(10),'').replace(' ','')}").to_dict()
+    return js2py.eval_js(f"config = {config.replace(chr(10),'')}").to_dict()
