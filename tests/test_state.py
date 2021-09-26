@@ -124,7 +124,7 @@ machine_xstate_js_config ="""{
   }
 }"""
 xstate_python_config=get_configuration_from_js(machine_xstate_js_config)
-xstate_python_config['id']="test_states"
+# xstate_python_config['id']="test_states"
 
 #TODO:  machine initialization fail on `if config.get("entry")`` in xstate/state_node.py", line 47, in __init__
 """
@@ -636,13 +636,16 @@ class TestState_transitions:
               ).toContainEqual(expect.objectContaining({ eventType: 'TO_TWO' }));
             });
         """
-
-        new_state_transitions = machine.transition(self.initial_state, 'TO_TWO').transitions
-
+        # xstate_python_config['id']="test_states" # TODO REMOVE ME after debug
+        # new_state_transitions = machine.transition(self.initial_state, 'TO_TWO').transitions
+        initial_state = machine.initial_state
+        new_state = machine.transition(initial_state, 'TO_TWO')
+        new_state_transitions = new_state.transitions
+    
         # TODO WIP 21w38 not sure if events are supported 
         assert  (
-          new_state_transitions != [] 
-          and "{ 'eventType': 'TO_TWO' }" in repr(new_state_transitions)
+          new_state_transitions != set()
+          and all([transition.event=='TO_TWO' for transition in new_state_transitions ])
         ), pytest_func_docstring_summary(request)
 
     def test_state_transitions_3(self,request):

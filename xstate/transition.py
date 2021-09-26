@@ -20,6 +20,7 @@ class TransitionConfig(NamedTuple):
 
 class Transition:
     event: str
+    # _event: SCXML.Event       #TODO Implement
     source: "StateNode"
     config: Union[str, "StateNode", TransitionConfig]
     actions: List[Action]
@@ -43,6 +44,7 @@ class Transition:
                 raise f"Invalid snippet of Javascript for Machine configuration, Exception:{e}"
 
         self.event = event
+        # self._event = utils.toSCXMLEvent(event) #TODO Implement
         self.config = config
         self.source = source
         self.type = "external"

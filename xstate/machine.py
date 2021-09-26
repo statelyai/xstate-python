@@ -1,5 +1,6 @@
 from __future__ import annotations #  PEP 563:__future__.annotations will become the default in Python 3.11
 from typing import TYPE_CHECKING, Dict, List, Union
+from xstate import transition
 
 from xstate.algorithm import (
     enter_states,
@@ -69,13 +70,15 @@ class Machine:
         configuration = get_configuration_from_state( #TODO DEBUG FROM HERE
             from_node=self.root, state=state, partial_configuration=set()
         )
-        (configuration, _actions) = main_event_loop(configuration, Event(event))
+        #TODO WIP 21W39 implement transitions
+        possible_transitions = list(configuration)[0].transitions
+        (configuration, _actions,transitons) = main_event_loop(configuration, Event(event))
 
         actions, warnings = self._get_actions(_actions)
         for w in warnings:
             print(w)
 
-        return State(configuration=configuration, context={}, actions=actions)
+        return State(configuration=configuration, context={}, actions=actions,transitions=transitons)
 
     def _get_actions(self, actions) -> List[lambda: None]:
         result = []
@@ -127,21 +130,22 @@ class Machine:
 
     @property
     def initial_state(self) -> State:
-        (configuration, _actions, internal_queue) = enter_states(
+        (configuration, _actions, internal_queue,transitions) = enter_states(
             [self.root.initial],
             configuration=set(),
             states_to_invoke=set(),
             history_value={},
             actions=[],
             internal_queue=[],
+            transitions=[]
         )
 
-        (configuration, _actions) = macrostep(
-            configuration=configuration, actions=_actions, internal_queue=internal_queue
+        (configuration, _actions,transitions) = macrostep(
+            configuration=configuration, actions=_actions, internal_queue=internal_queue,transitions=transitions
         )
 
         actions, warnings = self._get_actions(_actions)
         for w in warnings:
             print(w)
 
-        return State(configuration=configuration, context={}, actions=actions)
+        return State(configuration=configuration, context={}, actions=actions,transitions=transitions)

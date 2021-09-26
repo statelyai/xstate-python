@@ -1,12 +1,22 @@
-from __future__ import annotations #  PEP 563:__future__.annotations will become the default in Python 3.11
+from __future__ import annotations
+from multiprocessing import Condition #  PEP 563:__future__.annotations will become the default in Python 3.11
 from typing import  TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
+
 
 
 # TODO: why does this cause pytest to fail, ImportError: cannot import name 'get_state_value' from 'xstate.algorithm' 
 # Workaround: supress import and in `get_configuration_from_state` put state: [Dict,str]
 # from xstate.state import StateType
 
+
+from xstate.constants import  (
+    STATE_DELIMITER,
+    TARGETLESS_KEY,
+    DEFAULT_GUARD_TYPE,
+)
+
 if TYPE_CHECKING:
+    from xstate.types import Record, Guard, DoneEventObject
     from xstate.action import Action
     from xstate.transition import Transition
     from xstate.state_node import StateNode
@@ -17,6 +27,7 @@ if TYPE_CHECKING:
     from xstate.state import State
 
 from xstate.event import Event
+from xstate.action_types import ActionTypes
 
 
 import js2py
@@ -259,6 +270,45 @@ def is_in_final_state(state: StateNode, configuration: Set[StateNode]) -> bool:
     else:
         return False
 
+# /**
+#  * Returns an event that represents that a final state node
+#  * has been reached in the parent state node.
+#  *
+#  * @param id The final state node's parent state node `id`
+#  * @param data The data to pass into the event
+#  */
+# export function done(id: string, data?: any): DoneEventObject {
+def done(id:str,data:Any)->DoneEventObject:
+    """Returns an event that represents that a final state node
+    has been reached in the parent state node.
+
+    Args:
+        id (str): The final state node's parent state node `id`
+        data (Any): The data to pass into the event
+
+    Returns:
+        DoneEventObject: an event that represents that a final state node
+                            has been reached in the parent state node.
+    """
+    #   const type = `${ActionTypes.DoneState}.${id}`;
+    type = f"{ActionTypes.DoneState}.{id}"
+    #   const eventObject = {
+    #     type,
+    #     data
+    #   };
+    event_object = {
+        "type":type,
+        "data":data
+      }
+
+    #TODO: implement this
+    #   eventObject.toString = () => type;
+
+    #   return eventObject as DoneEvent;
+    return event_object
+    # }
+
+
 
 def enter_states(
     enabled_transitions: List[Transition],
@@ -267,6 +317,7 @@ def enter_states(
     history_value: HistoryValue,
     actions: List[Action],
     internal_queue: List[Event],
+    transitions:List[Transition]
 ) -> Tuple[Set[StateNode], List[Action], List[Event]]:
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
@@ -303,6 +354,7 @@ def enter_states(
             parent = s.parent
             grandparent = parent.parent
             internal_queue.append(Event(f"done.state.{parent.id}", s.donedata))
+            # transitions.add("TRANSITION") #TODO WIP 21W39
 
             if grandparent and is_parallel_state(grandparent):
                 if all(
@@ -310,8 +362,9 @@ def enter_states(
                     for parent_state in get_child_states(grandparent)
                 ):
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
+                    # transitions.add("TRANSITION") #TODO WIP 21W39
 
-    return (configuration, actions, internal_queue)
+    return (configuration, actions, internal_queue,transitions)
 
 
 def exit_states(
@@ -452,24 +505,29 @@ def main_event_loop(
 ) -> Tuple[Set[StateNode], List[Action]]:
     states_to_invoke: Set[StateNode] = set()
     history_value = {}
+    transitions=set()
     enabled_transitions = select_transitions(event=event, configuration=configuration)
-
-    (configuration, actions, internal_queue) = microstep(
+    transitions=transitions.union(enabled_transitions)
+    (configuration, actions, internal_queue,transitions) = microstep(
         enabled_transitions,
         configuration=configuration,
         states_to_invoke=states_to_invoke,
         history_value=history_value,
+        transitions=transitions,
     )
 
-    (configuration, actions) = macrostep(
-        configuration=configuration, actions=actions, internal_queue=internal_queue
+    (configuration, actions,transitions) = macrostep(
+        configuration=configuration, 
+        actions=actions, 
+        internal_queue=internal_queue,
+        transitions=transitions,
     )
 
-    return (configuration, actions)
+    return (configuration, actions,transitions)
 
 
 def macrostep(
-    configuration: Set[StateNode], actions: List[Action], internal_queue: List[Event]
+    configuration: Set[StateNode], actions: List[Action], internal_queue: List[Event], transitions:List[Transition]
 ) -> Tuple[Set[StateNode], List[Action]]:
     enabled_transitions = set()
     macrostep_done = False
@@ -487,14 +545,15 @@ def macrostep(
                     configuration=configuration,
                 )
         if enabled_transitions:
-            (configuration, actions, internal_queue) = microstep(
+            (configuration, actions, internal_queue,transitions) = microstep(
                 enabled_transitions=enabled_transitions,
                 configuration=configuration,
                 states_to_invoke=set(),  # TODO
                 history_value={},  # TODO
+                transitions=transitions,
             )
 
-    return (configuration, actions)
+    return (configuration, actions,transitions)
 
 
 def execute_transition_content(
@@ -516,6 +575,7 @@ def execute_content(action: Action, actions: List[Action], internal_queue: List[
 
 def microstep(
     enabled_transitions: List[Transition],
+    transitions: List[Transition],
     configuration: Set[StateNode],
     states_to_invoke: Set[StateNode],
     history_value: HistoryValue,
@@ -543,13 +603,117 @@ def microstep(
         history_value=history_value,
         actions=actions,
         internal_queue=internal_queue,
+        transitions=transitions
     )
 
-    return (configuration, actions, internal_queue)
+    return (configuration, actions, internal_queue,transitions)
+
+def is_machine(value):
+  try:
+    return '__xstatenode' in value
+  except:
+    return False
+
+# export function toGuard<TContext, TEvent extends EventObject>(
+#   condition?: Condition<TContext, TEvent>,
+#   guardMap?: Record<string, ConditionPredicate<TContext, TEvent>>
+# ): Guard<TContext, TEvent> | undefined {
+
+
+def to_guard(condition: Condition, guardMap:Record) -> Guard:
+    #   if (!condition) {
+    #     return undefined;
+    #   }
+    if condition==None:
+        return None
+
+    #   if (isString(condition)) {
+    #     return {
+    #       type: DEFAULT_GUARD_TYPE,
+    #       name: condition,
+    #       predicate: guardMap ? guardMap[condition] : undefined
+    #     };
+    #   }
+
+    if isinstance(condition,str):
+        return {
+          "type": DEFAULT_GUARD_TYPE,
+          "name": condition,
+          "predicate":  guardMap[condition] if guardMap else None
+        }
+    
+    #   if (isFunction(condition)) {
+    #     return {
+    #       type: DEFAULT_GUARD_TYPE,
+    #       name: condition.name,
+    #       predicate: condition
+    #     };
+    #   }
+
+
+    if callable(condition):
+        return {
+          "type": DEFAULT_GUARD_TYPE,
+          "name": condition['name'],
+          "predicate": condition
+        }
+
+    #   return condition;
+    return condition
+
+
+def to_array_strict(value:Any)->List: 
+    if isinstance(value,List):
+        return value
+    return [value]
+
+# export function toArray<T>(value: T[] | T | undefined): T[] {
+#   if (value === undefined) {
+#     return [];
+#   }
+#   return toArrayStrict(value);
+# }
+def to_array(value: Union[str,List, None])->List:
+  if not value:
+    return []
+  
+  return to_array_strict(value)
 
 
 # ===================
+def to_transition_config_array(event,configLike)-> List:
+    transitions = {{'target':transition_like,'event':event} for transition_like in to_array_strict(configLike) 
+        if (
+        #   isinstance(transition_like,'undefined') or
+          isinstance(transition_like,str) or
+          is_machine(transition_like)
+        )
+    }
+    return transitions
 
+
+# export function normalizeTarget<TContext, TEvent extends EventObject>(
+#   target: SingleOrArray<string | StateNode<TContext, any, TEvent>> | undefined
+# ): Array<string | StateNode<TContext, any, TEvent>> | undefined {
+#   if (target === undefined || target === TARGETLESS_KEY) {
+#     return undefined;
+#   }
+#   return toArray(target);
+# }
+
+
+def normalize_target( target: Union[List[str],StateNode]
+        )->Union[List[str],StateNode]: 
+        
+  if not target or target == TARGETLESS_KEY:
+    return None
+  
+  return to_array(target)
+
+
+
+def flatten(t:List)->List:
+    return [item for sublist in t for item in sublist]
 
 def get_configuration_from_state(
     from_node: StateNode,
