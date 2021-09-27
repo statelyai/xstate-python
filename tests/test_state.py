@@ -35,7 +35,6 @@ import importlib
 
 from .utils_for_tests import pytest_func_docstring_summary
 
-#TODO: state `one` transition `TO_TWO_MAYBE` condition function needs to be handled
 machine_xstate_js_config ="""{
   initial: 'one',
   states: {
@@ -128,29 +127,12 @@ machine_xstate_js_config ="""{
 }"""
 xstate_python_config=get_configuration_from_js(machine_xstate_js_config)
 
-#TODO:  machine initialization fail on `if config.get("entry")`` in xstate/state_node.py", line 47, in __init__
-"""
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "/workspaces/xstate-python/xstate/machine.py", line 26, in __init__
-    config, machine=self, key=config.get("id", "(machine)"), parent=None
-  File "/workspaces/xstate-python/xstate/state_node.py", line 60, in __init__
-    for k, v in config.get("states", {}).items()
-  File "/workspaces/xstate-python/xstate/state_node.py", line 60, in <dictcomp>
-    for k, v in config.get("states", {}).items()
-  File "/workspaces/xstate-python/xstate/state_node.py", line 47, in __init__
-    if config.get("entry")
-  File "/workspaces/xstate-python/xstate/state_node.py", line 46, in <listcomp>
-    [self.get_actions(entry_action) for entry_action in config.get("entry")]
-  File "/workspaces/xstate-python/xstate/state_node.py", line 28, in get_actions
-    return Action(action.get("type"), exec=None, data=action)
-AttributeError: 'str' object has no attribute 'get'
-"""
-# TODO remove Workaround for above issue
-del xstate_python_config['states']['one']['on']['INTERNAL']['actions']
+
+# Example of Workaround for issues with state machine config
+# del xstate_python_config['states']['one']['on']['INTERNAL']['actions']
 
 # xstate_python_config['states']['one']['on']['INTERNAL']['actions']=['doSomething']
-del xstate_python_config['states']['one']['entry']
+# del xstate_python_config['states']['one']['entry']
 # xstate_python_config['states']['one']['entry'] =['enter']
 machine = Machine(xstate_python_config)
 

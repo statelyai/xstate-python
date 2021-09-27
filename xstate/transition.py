@@ -5,7 +5,7 @@ from xstate.algorithm import (
 )
 
 
-from xstate.action import Action
+from xstate.action import Action,to_action_objects
 from xstate.event import Event
 
 if TYPE_CHECKING:
@@ -51,16 +51,9 @@ class Transition:
         self.cond = config.get("cond", None) if isinstance(config, dict) else None
         self.order = order
 
-        self.actions = (
-            (
-                [
-                    Action(type=action.get("type"), data=action)
-                    for action in config.get("actions", [])
-                ]
-            )
-            if isinstance(config, dict)
-            else []
-        )
+        self.actions=to_action_objects(config.get("actions", []),
+                                 action_function_map=None
+            ) if isinstance(config, dict)  else []
 
     @property
     def target(self) -> List["StateNode"]:

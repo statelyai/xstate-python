@@ -794,24 +794,44 @@ export type SimpleOrStateNodeConfig<
 > =
   | AtomicStateNodeConfig<TContext, TEvent>
   | StateNodeConfig<TContext, TStateSchema, TEvent>;
+"""
+# export type ActionFunctionMap<
+#   TContext,
+#   TEvent extends EventObject,
+#   TAction extends ActionObject<TContext, TEvent> = ActionObject<
+#     TContext,
+#     TEvent
+#   >
+# > = {
+#   [K in TAction['type']]?:
+#     | ActionObject<TContext, TEvent>
+#     | ActionFunction<
+#         TContext,
+#         TEvent,
+#         TAction extends { type: K } ? TAction : never
+#       >;
+# };
 
-export type ActionFunctionMap<
-  TContext,
-  TEvent extends EventObject,
-  TAction extends ActionObject<TContext, TEvent> = ActionObject<
-    TContext,
-    TEvent
-  >
-> = {
-  [K in TAction['type']]?:
-    | ActionObject<TContext, TEvent>
-    | ActionFunction<
-        TContext,
-        TEvent,
-        TAction extends { type: K } ? TAction : never
-      >;
-};
+ActionFunctionMap=ActionObject
+#TODO: need to implement the following for ActionFunctionMap
+#   TContext,
+#   TEvent extends EventObject,
+#   TAction extends ActionObject<TContext, TEvent> = ActionObject<
+#     TContext,
+#     TEvent
+#   >
+# > = {
+#   [K in TAction['type']]?:
+#     | ActionObject<TContext, TEvent>
+#     | ActionFunction<
+#         TContext,
+#         TEvent,
+#         TAction extends { type: K } ? TAction : never
+#       >;
+# };
 
+
+"""
 export type DelayFunctionMap<TContext, TEvent extends EventObject> = Record<
   string,
   DelayConfig<TContext, TEvent>

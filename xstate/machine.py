@@ -88,6 +88,8 @@ class Machine:
                 result.append(self.actions[action.type])
             elif callable(action.type):
                 result.append(action.type)
+            elif callable(action.exec):
+                result.append(action.exec)
             else:
                 errors.append("No '{}' action".format(action.type))
         return result, errors
