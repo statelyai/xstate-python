@@ -161,7 +161,7 @@ def to_action_object(action:Action,action_function_map:ActionFunctionMap):
                 "type":action.get('type',ActionTypes.Raise),
                 "exec":action.get('exec',None)
                 }
-
+        action_object['data'] =  action if ('event' in action) else {}
     else:
         # TODO TD, some validation required that object has a type and exec attribute
         #     const exec = getActionFunction(action.type, actionFunctionMap);

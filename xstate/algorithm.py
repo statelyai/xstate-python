@@ -568,7 +568,7 @@ def execute_transition_content(
 
 def execute_content(action: Action, actions: List[Action], internal_queue: List[Event]):
     if action.type==ActionTypes.Raise or action.type == "xstate:raise":
-        internal_queue.append(Event(action.data.get("event")))
+        internal_queue.append(Event(name=action.data.get("event")))
     else:
         actions.append(action)
 
