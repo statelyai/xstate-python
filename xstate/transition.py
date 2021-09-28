@@ -1,12 +1,16 @@
+from __future__ import (
+    annotations,
+)  #  PEP 563:__future__.annotations will become the default in Python 3.11
 from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Union
 
-from xstate.algorithm import get_configuration_from_js
+import xstate.algorithm as algorithm
 
 
-from xstate.action import Action, to_action_objects
+from xstate.action import to_action_objects
 from xstate.event import Event
 
 if TYPE_CHECKING:
+    from xstate.action import Action
     from xstate.state_node import StateNode
 
 CondFunction = Callable[[Any, Event], bool]
@@ -41,7 +45,7 @@ class Transition:
             and config.rstrip()[-1] == "}"
         ):
             try:
-                config = get_configuration_from_js(config)
+                config = algorithm.get_configuration_from_js(config)
             except Exception as e:
                 raise f"Invalid snippet of Javascript for Machine configuration, Exception:{e}"
 

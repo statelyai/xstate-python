@@ -4,7 +4,10 @@ from __future__ import (
 from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
 from xstate.transition import Transition
 
-from xstate.algorithm import get_state_value
+# from xstate.algorithm import get_state_value
+import xstate.algorithm as algorithm
+from contextvars import Context
+from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from xstate.action import Action
@@ -37,7 +40,7 @@ class State:
     ):
         root = next(iter(configuration)).machine.root
         self.configuration = configuration
-        self.value = get_state_value(root, configuration)
+        self.value = algorithm.get_state_value(root, configuration)
         self.context = context
         self.actions = actions
         self.history_value = kwargs.get("history_value", None)
@@ -118,5 +121,5 @@ class State:
         # return f"""{self.__class__.__name__}(configuration={'<WIP a Set["StateNode"]>'}, context={self.context} , actions={self.actions})"""
 
 
-StateType = Union[str, State]
-StateValue = str
+# StateType = Union[str, State]
+# StateValue = str

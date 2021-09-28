@@ -1,3 +1,7 @@
+from __future__ import (
+    annotations,
+)  #  PEP 563:__future__.annotations will become the default in Python 3.11
+
 # import { ActivityMap, DefaultGuardType } from './types';
 
 # export const STATE_DELIMITER = '.';
