@@ -1,7 +1,9 @@
 from __future__ import annotations
+from contextvars import Context
 from typing import (
     TYPE_CHECKING,
     Callable,
+    Iterable,
     TypeVar,
     Generic,
     Union,
@@ -19,10 +21,18 @@ from dataclasses import dataclass
 if TYPE_CHECKING:
     from xstate.action import Action
     from xstate.state import State
+
+    # from xstate.state_node import StateNode
     from xstate.types import StateValueMap
 
+
+# TODO: TD workarounds for Circular refs in State and StateNode
 # from xstate.state import State
 State = Any
+# from xstate.state_node import StateNode
+StateNode = Any
+
+
 """
 //from: xstate/packages/core/src/types.ts
 
@@ -51,6 +61,18 @@ MetaObject = Record[str, Any]
 #    */
 #   type : string;
 # }
+
+# type Configuration<TC, TE extends EventObject> = Iterable<
+#   StateNode<TC, any, TE>
+# >;
+Configuration = Iterable[StateNode]
+
+# type AdjList<TC, TE extends EventObject> = Map<
+#   StateNode<TC, any, TE>,
+#   Array<StateNode<TC, any, TE>>
+# >;
+# TODO: TD python equivilance for Map rather than List
+AdjList = Dict  # List[StateNode]
 
 
 @dataclass
@@ -1383,13 +1405,26 @@ export interface Typestate<TContext> {
   context: TContext;
 }
 
-export interface StateLike<TContext> {
-  value: StateValue;
-  context: TContext;
-  event: EventObject;
-  _event: SCXML.Event<EventObject>;
-}
+"""
 
+
+@dataclass
+class StateLike:
+    value: StateValue
+    context: Context
+    event: EventObject
+    _event: Any  # TODO change  to SCXML.Event
+
+
+# export interface StateLike<TContext> {
+#   value: StateValue;
+#   context: TContext;
+#   event: EventObject;
+#   _event: SCXML.Event<EventObject>;
+# }
+
+
+"""
 export interface StateConfig<TContext, TEvent extends EventObject> {
   value: StateValue;
   context: TContext;

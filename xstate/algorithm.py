@@ -2,8 +2,27 @@ from __future__ import annotations
 from multiprocessing import (
     Condition,
 )  #  PEP 563:__future__.annotations will become the default in Python 3.11
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
+import logging
+from typing_extensions import get_args
 
+logger = logging.getLogger(__name__)
+
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    Iterable,
+)
+
+# from xstate.state import StateValue  # , StateLike
+
+# from xstate.types import StateLike
 
 # TODO: why does this cause pytest to fail, ImportError: cannot import name 'get_state_value' from 'xstate.algorithm'
 # Workaround: supress import and in `get_configuration_from_state` put state: [Dict,str]
@@ -17,11 +36,20 @@ from xstate.constants import (
 )
 
 if TYPE_CHECKING:
-    from xstate.types import Record, Guard, DoneEventObject
+    from xstate.types import (
+        Record,
+        Guard,
+        DoneEventObject,
+        StateLike,
+        StateValue,
+        Configuration,
+        AdjList,
+    )
     from xstate.action import Action
     from xstate.transition import Transition
     from xstate.state_node import StateNode
     from xstate.state import StateType
+    from xstate.event import Event
 
     HistoryValue = Dict[str, Set[StateNode]]
 
@@ -239,6 +267,15 @@ def get_proper_ancestors(
         marker = marker.parent
 
     return ancestors
+
+
+# export function getChildren<TC, TE extends EventObject>(
+#   stateNode: StateNode<TC, any, TE>
+# ): Array<StateNode<TC, any, TE>> {
+#   return keys(stateNode.states).map((key) => stateNode.states[key]);
+# }
+def get_children(state_node: StateNode) -> List[StateNode]:
+    return [state_node.states[key] for key in state_node.states].keys()
 
 
 def is_final_state(state_node: StateNode) -> bool:
@@ -720,6 +757,176 @@ def flatten(t: List) -> List:
     return [item for sublist in t for item in sublist]
 
 
+def get_adj_list(configuration: Configuration) -> AdjList:
+    # export function getAdjList<TC, TE extends EventObject>(
+    #   configuration: Configuration<TC, TE>
+    # ): AdjList<TC, TE> {
+    #   const adjList: AdjList<TC, TE> = new Map();
+    adjList: AdjList = {}
+
+    #   for (const s of configuration) {
+    for s in configuration:
+        #     if (!adjList.has(s)) {
+        #       adjList.set(s, []);
+        if s not in adjList:
+            adjList[s] = []
+
+        #     if (s.parent) {
+        if s.parent:
+            #       if (!adjList.has(s.parent)) {
+            if s.parent not in adjList:
+                #         adjList.set(s.parent, []);
+                adjList[s.parent] = []
+
+        #       adjList.get(s.parent)!.push(s);
+        adjList[s.parent].append(s)
+
+    #   return adjList;
+    return adjList
+
+
+# }
+
+
+def get_configuration(
+    prev_state_nodes: Iterable[StateNode], state_nodes: Iterable[StateNode]
+) -> Iterable[StateNode]:
+
+    # export function getConfiguration<TC, TE extends EventObject>(
+    #   prevStateNodes: Iterable<StateNode<TC, any, TE, any>>,
+    #   stateNodes: Iterable<StateNode<TC, any, TE, any>>
+    # ): Iterable<StateNode<TC, any, TE, any>> {
+
+    #   const prevConfiguration = new Set(prevStateNodes);
+    #   const prevAdjList = getAdjList(prevConfiguration);
+    prev_configuration = Set(prev_state_nodes)
+    prev_adj_list = get_adj_list(prev_configuration)
+
+    configuration = Set(state_nodes)
+
+    #   // add all ancestors
+    #   for (const s of configuration) {
+    #     let m = s.parent;
+
+    #     while (m && !configuration.has(m)) {
+    #       configuration.add(m);
+    #       m = m.parent;
+    #     }
+    #   }
+
+    for s in configuration:
+        m = s.parent
+        while m and m not in configuration:
+            configuration.add(m)
+            m = m.parent
+
+    #   const adjList = getAdjList(configuration);
+    adjList = get_adj_list(configuration)
+
+    #   // add descendants
+    #   for (const s of configuration) {
+    for s in configuration:
+
+        #     // if previously active, add existing child nodes
+        #     if (s.type === 'compound' && (!adjList.get(s) || !adjList.get(s)!.length)) {
+        if s.type == "compound" and (not adjList[s] or len(adjList[s] > 0)):
+
+            #       if (prevAdjList.get(s)) {
+            if prev_adj_list[s]:
+                #         prevAdjList.get(s)!.forEach((sn) => configuration.add(sn));
+                [configuration.add(sn) for sn in prev_adj_list[s]]
+            #       } else {
+            else:
+                #         s.initialStateNodes.forEach((sn) => configuration.add(sn));
+                [configuration.add(sn) for sn in s.initial_state_nodes]
+        #       }
+        #     } else {
+        else:
+            #       if (s.type === 'parallel') {
+            if s.type == "parallel":
+                #         for (const child of getChildren(s)) {
+                for child in get_children(s):
+                    #           if (child.type === 'history') {
+                    if child.type == "history":
+                        #             continue;
+                        continue
+                    #           }
+
+                    #           if (!configuration.has(child)) {
+                    if not child in configuration:
+                        #             configuration.add(child);
+                        configuration.add(child)
+
+                        #             if (prevAdjList.get(child)) {
+                        if child in prev_adj_list:
+                            #               prevAdjList.get(child)!.forEach((sn) => configuration.add(sn));
+                            [configuration.add(sn) for sn in prev_adj_list[child]]
+                        #             } else {
+                        else:
+                            #               child.initialStateNodes.forEach((sn) => configuration.add(sn));
+                            [configuration.add(sn) for sn in child.initialStateNodes]
+        #             }
+        #           }
+        #         }
+        #       }
+        #     }
+        #   }
+
+        #   // add all ancestors
+        #   for (const s of configuration) {
+        for s in configuration:
+
+            #     let m = s.parent;
+            m = s.parent
+
+            #     while (m && !configuration.has(m)) {
+            #       configuration.add(m);
+            #       m = m.parent;
+            while m and m not in configuration:
+                configuration.add(m)
+                m = m.parent
+
+    #     }
+    #   }
+
+    #   return configuration;
+    return configuration
+
+
+# }
+
+
+def is_possible_js_config_snippet(config: str):
+    return (
+        isinstance(config, str)
+        and config.lstrip()[0] == "{"
+        and config.rstrip()[-1] == "}"
+    )
+
+
+def get_configuration_from_js(config: str) -> dict:
+    """Translates a JS config to a xstate_python configuration dict
+    config: str  a valid javascript snippet of an xstate machine
+    Example
+        get_configuration_from_js(
+            config=
+            ```
+              {
+                a: 'a2',
+                b: {
+                  b2: {
+                    foo: 'foo2',
+                    bar: 'bar1'
+                  }
+                }
+              }
+            ```)
+        )
+    """
+    # return js2py.eval_js(f"config = {config.replace(chr(10),'').replace(' ','')}").to_dict()
+    return js2py.eval_js(f"config = {config.replace(chr(10),'')}").to_dict()
+
+
 def get_configuration_from_state(
     from_node: StateNode,
     state: Union[State, Dict, str],
@@ -794,6 +1001,81 @@ def get_state_value(state_node: StateNode, configuration: Set[StateNode]):
     return get_value_from_adj(state_node, get_adj_list(configuration))
 
 
+def path_to_state_value(state_path: List[str]) -> StateValue:
+    # export function pathToStateValue(statePath: string[]): StateValue {
+    #   if (statePath.length === 1) {
+    #     return statePath[0];
+    #   }
+    if len(state_path) == 1:
+        return state_path[0]
+
+    #   const value = {};
+    #   let marker = value;
+    value = {}
+    marker = value
+
+    #   for (let i = 0; i < statePath.length - 1; i++) {
+    #     if (i === statePath.length - 2) {
+    #       marker[statePath[i]] = statePath[i + 1];
+    #     } else {
+    #       marker[statePath[i]] = {};
+    #       marker = marker[statePath[i]];
+    #     }
+    #   }
+
+    # TODO: WIP -what does a path look like
+    logger.warning("path_to_state_value: not fully implemented yet")
+    # for (let i = 0; i < statePath.length - 1; i++) {
+    # if (i === statePath.length - 2) {
+    #     marker[statePath[i]] = statePath[i + 1];
+    # } else {
+    #     marker[statePath[i]] = {};
+    #     marker = marker[statePath[i]];
+    # }
+    # }
+
+    #   return value;
+    return value
+    # }
+
+
+def to_state_value(
+    state_value: Union[StateLike, StateValue, str],
+    # state_value: Union[StateValue, str],
+    delimiter,
+) -> StateValue:
+    # export function toStateValue(
+    #   stateValue: StateLike<any> | StateValue | string[],
+    #   delimiter: string
+    # ): StateValue {
+
+    #   if (isStateLike(stateValue)) {
+    #     return stateValue.value;
+    #   }
+    if is_state_like(state_value):
+        return state_value.value
+    #   if (isArray(stateValue)) {
+    #     return pathToStateValue(stateValue);
+    #   }
+    if isinstance(state_value, List):
+        return path_to_state_value(to_state_value)
+
+    #   if (typeof stateValue !== 'string') {
+    #     return stateValue as StateValue;
+    #   }
+    if isinstance(state_value, str):
+        # TODO: do we really have to process js snippets
+        if is_possible_js_config_snippet(state_value):
+            state_value = repr(get_configuration_from_js(state_value))
+        return state_value
+
+    #   const statePath = toStatePath(stateValue as string, delimiter);
+    state_path = to_state_path(state_value, delimiter)
+    #   return pathToStateValue(statePath);
+    return path_to_state_value(state_path)
+    # }
+
+
 def to_state_path(state_id: str, delimiter: str = ".") -> List[str]:
     try:
         if isinstance(state_id, List):
@@ -807,6 +1089,8 @@ def to_state_path(state_id: str, delimiter: str = ".") -> List[str]:
 def is_state_like(state: any) -> bool:
     return (
         isinstance(state, object)
+        # TODO: which objects are state like ?
+        and "<class 'xstate" in str(type(state))
         and "value" in vars(state)
         and "context" in vars(state)
         # TODO : Eventing to be enabled sometime
@@ -912,26 +1196,3 @@ def update_history_states(hist, state_value):
 
 def update_history_value(hist, state_value):
     return {"current": state_value, "states": update_history_states(hist, state_value)}
-
-
-def get_configuration_from_js(config: str) -> dict:
-    """Translates a JS config to a xstate_python configuration dict
-    config: str  a valid javascript snippet of an xstate machine
-    Example
-        get_configuration_from_js(
-            config=
-            ```
-              {
-                a: 'a2',
-                b: {
-                  b2: {
-                    foo: 'foo2',
-                    bar: 'bar1'
-                  }
-                }
-              }
-            ```)
-        )
-    """
-    # return js2py.eval_js(f"config = {config.replace(chr(10),'').replace(' ','')}").to_dict()
-    return js2py.eval_js(f"config = {config.replace(chr(10),'')}").to_dict()

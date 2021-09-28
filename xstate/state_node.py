@@ -12,10 +12,7 @@ from xstate.constants import (
     STATE_DELIMITER,
     TARGETLESS_KEY,
 )
-from xstate.types import (
-    TransitionConfig,
-    TransitionDefinition,
-)
+from xstate.types import TransitionConfig, TransitionDefinition  # , StateLike
 
 from xstate.action import Action, to_action_objects, to_action_object
 from xstate.transition import Transition
@@ -25,6 +22,7 @@ from xstate.algorithm import (
     flatten,
     normalize_target,
     to_array_strict,
+    to_state_value,
     is_machine,
     to_array,
     to_guard,
@@ -37,7 +35,10 @@ from xstate.environment import IS_PRODUCTION, WILDCARD, STATE_IDENTIFIER, NULL_E
 
 if TYPE_CHECKING:
     from xstate.machine import Machine
-    from xstate.state import State, StateValue
+    from xstate.types import State, StateValue, StateLike
+
+
+from xstate.state import State
 
 
 def is_state_id(state_id: str) -> bool:
@@ -57,6 +58,7 @@ class StateNode:
     id: str
     key: str
     states: Dict[str, "StateNode"]
+    delimiter: str = STATE_DELIMITER
 
     def get_actions(self, action):
         """get_actions ( requires migration to newer implementation"""
@@ -364,6 +366,153 @@ class StateNode:
 
         return state_node
 
+    def get_state_node(self, state_key: str) -> StateNode:
+        #   public getStateNode(
+        #     stateKey: string
+        #   ): StateNode<TContext, any, TEvent, TTypestate> {
+        #   /**
+        #    * Returns the child state node from its relative `stateKey`, or throws.
+        #    */
+        """Returns the child state node from its relative `stateKey`, or raises exception.
+
+        Args:
+            state_key (str): [description]
+
+        Returns:
+            StateNode: Returns the child state node from its relative `stateKey`, or throws.
+        """
+        #     if (isStateId(stateKey)) {
+        if is_state_id(state_key):
+            return self.machine.get_state_node_by_id(state_key)
+        #     }
+
+        #     if (!this.states) {
+        if not self.states:
+            #       throw new Error(
+            #         `Unable to retrieve child state '${stateKey}' from '${this.id}'; no child states exist.`
+            #       );
+            msg = f"Unable to retrieve child state '{state_key}' from '{self.id}'; no child states exist."
+            logger.error(msg)
+            raise Exception(msg)
+
+        #     const result = this.states[stateKey];
+        result = self.states.get(state_key, None)
+        #     if (!result) {
+        if not result:
+            #       throw new Error(
+            #         `Child state '${stateKey}' does not exist on '${this.id}'`
+            #       );
+            msg = f"Child state '{state_key}' does not exist on '{self.id}'"
+            logger.error(msg)
+            raise Exception(msg)
+
+        #     return result;
+        return result
+
+    def get_state_nodes(self, state: StateValue) -> List[StateNode]:
+        #   public getStateNodes(
+        #     state: StateValue | State<TContext, TEvent, any, TTypestate>
+        #   ): Array<StateNode<TContext, any, TEvent, TTypestate>> {
+        # /**
+        #    * Returns the state nodes represented by the current state value.
+        #    *
+        #    * @param state The state value or State instance
+        #    */
+        """Returns the state nodes represented by the current state value.
+
+        Args:
+            state (StateValue): The state value or State instance
+
+        Raises:
+            Exception: [description]
+
+        Returns:
+            List[StateNode]: Returns the state nodes represented by the current state value.
+        """
+        #     if (!state) {
+        #       return [];
+        #     }
+        if not state:
+            return []
+
+        #     const stateValue =
+        #       state instanceof State
+        #         ? state.value
+        #         : toStateValue(state, this.delimiter);
+        state_value = (
+            state.value
+            if isinstance(state, State)
+            else to_state_value(state, self.delimiter)
+        )
+
+        #     if (isString(stateValue)) {
+        if isinstance(state_value, str):
+
+            #       const initialStateValue = this.getStateNode(stateValue).initial;
+            initial_state_value = self.get_state_node(state_value).initial
+
+            #       return initialStateValue !== undefined
+            #         ? this.getStateNodes({ [stateValue]: initialStateValue } as StateValue)
+            #         : [this, this.states[stateValue]];
+            #     }
+            # TODO: WIP Check this -
+            return (
+                self.get_state_nodes({[state_value]: initial_state_value})
+                if initial_state_value
+                else [self, self.states[state_value]]
+            )
+
+        #     const subStateKeys = keys(stateValue);
+        sub_state_keys = state_value.keys()
+
+        #     const subStateNodes: Array<
+        #       StateNode<TContext, any, TEvent, TTypestate>
+        #     > = subStateKeys.map((subStateKey) => this.getStateNode(subStateKey));
+        sub_state_nodes: List[StateNode] = [
+            self.get_state_node(sub_state_key) for sub_state_key in sub_state_keys
+        ]
+
+        #     subStateNodes.push(this);
+        sub_state_nodes.append(self)
+
+        #     return subStateNodes.concat(
+        from functools import reduce
+
+        # def full_union(input):
+        #     """ Compute the union of a list of sets """
+        #     return reduce(set.union, input[1:], input[0])
+
+        # result = full_union(L)
+
+        #       subStateKeys.reduce((allSubStateNodes, subStateKey) =>
+        # {
+        #         const subStateNode = this.getStateNode(subStateKey).getStateNodes(
+        #           stateValue[subStateKey]
+        #         );
+        def reduce_fx(all_sub_state_nodes, sub_state_key):
+            sub_state_node = self.get_state_node(sub_state_key).get_state_nodes(
+                state_value[sub_state_key]
+            )
+            return all_sub_state_nodes.extend(sub_state_node)
+
+        def substate_node_reduce(sub_state_keys):
+            return reduce(reduce_fx, sub_state_keys, [])
+
+        #       }, [] as Array<StateNode<TContext, any, TEvent, TTypestate>>)
+        #     );
+        return substate_node_reduce(self, sub_state_keys)
+
+
+#   /**
+#    * Returns `true` if this state node explicitly handles the given event.
+#    *
+#    * @param event The event in question
+#    */
+#   public handles(event: Event<TEvent>): boolean {
+#     const eventType = getEventType<TEvent>(event);
+
+#     return this.events.includes(eventType);
+#   }
 
 # const validateArrayifiedTransitions = <TContext>(
 #   stateNode: StateNode<any, any, any, any>,
