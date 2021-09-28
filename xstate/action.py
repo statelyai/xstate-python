@@ -1,16 +1,27 @@
-from typing import TYPE_CHECKING,Any, Callable, Dict, Optional,List, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, List, Union
+
 if TYPE_CHECKING:
     from xstate.action import Action
     from xstate.state_node import StateNode
 import logging
+
 logger = logging.getLogger(__name__)
 from xstate.event import Event
+
 # from xstate.action_types import DoneInvoke
-from xstate.types import ActionFunction, ActionFunctionMap, ActionType, ActionTypes, ActionObject
+from xstate.types import (
+    ActionFunction,
+    ActionFunctionMap,
+    ActionType,
+    ActionTypes,
+    ActionObject,
+)
+
 
 def not_implemented():
     logger.warning("Action function: not implemented")
     pass
+
 
 class DoneEvent(Event):
     pass
@@ -36,12 +47,12 @@ class DoneEvent(Event):
 
 #   return eventObject as DoneEvent;
 # }
-def done_invoke(id: str, data: Any)->DoneEvent: 
+def done_invoke(id: str, data: Any) -> DoneEvent:
     """Returns an event that represents that an invoked service has terminated.
- 
+
     * An invoked service is terminated when it has reached a top-level final state node,
     * but not when it is canceled.
- 
+
     Args:
         id (str): The final state node ID
         data (Any): The data to pass into the event
@@ -50,7 +61,8 @@ def done_invoke(id: str, data: Any)->DoneEvent:
         DoneEvent: an event that represents that an invoked service has terminated
     """
     type = f"{ActionTypes.DoneInvoke}.{id}"
-    return DoneEvent(type,data)
+    return DoneEvent(type, data)
+
 
 # export const toActionObjects = <TContext, TEvent extends EventObject>(
 #   action?: SingleOrArray<Action<TContext, TEvent>> | undefined,
@@ -66,7 +78,6 @@ def done_invoke(id: str, data: Any)->DoneEvent:
 #     toActionObject(subAction, actionFunctionMap)
 #   );
 # };
-
 
 
 class Action:
@@ -93,9 +104,8 @@ class Action:
 #   actionFunctionMap?: ActionFunctionMap<TContext, TEvent>
 # ):
 def get_action_function(
-      action_type: ActionType,
-      action_function_map: ActionFunctionMap
-)->Union[ActionObject,ActionFunction,None]:
+    action_type: ActionType, action_function_map: ActionFunctionMap
+) -> Union[ActionObject, ActionFunction, None]:
     #   | ActionObject<TContext, TEvent>
     #   | ActionFunction<TContext, TEvent>
     #   | undefined {
@@ -110,12 +120,12 @@ def get_action_function(
 #   action: Action<TContext, TEvent>,
 #   actionFunctionMap?: ActionFunctionMap<TContext, TEvent>
 # ): ActionObject<TContext, TEvent> {
-def to_action_object(action:Action,action_function_map:ActionFunctionMap):
-#   let actionObject: ActionObject<TContext, TEvent>;
+def to_action_object(action: Action, action_function_map: ActionFunctionMap):
+    #   let actionObject: ActionObject<TContext, TEvent>;
     action_object: ActionObject = {}
 
-#   if (isString(action) || typeof action === 'number') {
-    if isinstance(action,str) or type(action)=='number':
+    #   if (isString(action) || typeof action === 'number') {
+    if isinstance(action, str) or type(action) == "number":
         #     const exec = getActionFunction(action, actionFunctionMap);
         exec = get_action_function(action, action_function_map)
 
@@ -135,33 +145,30 @@ def to_action_object(action:Action,action_function_map:ActionFunctionMap):
             action_object = exec
         #     } else {
         else:
-            #       actionObject = { type: action, exec: undefined };
-            action_object = { "type": action, "exec": None }
+            #       actionObject = { type : action, exec: undefined };
+            action_object = {"type": action, "exec": None}
     #     }
     #   } else if (isFunction(action)) {
     elif callable(action):
         #     actionObject = {
         #       // Convert action to string if unnamed
-        #       type: action.name || action.toString(),
+        #       type : action.name || action.toString(),
         #       exec: action
         #     };
         action_object = {
             # // Convert action to string if unnamed
             # "type": action.__qualname__ or str(action),
-            "type": str(ActionTypes.Raise), #"xstate:raise
+            "type": str(ActionTypes.Raise),  # "xstate:raise
             "exec": action,
         }
-        action_object = {
-            **action_object,
-            "data":action_object.copy()
-            }
+        action_object = {**action_object, "data": action_object.copy()}
     #   } else {
-    elif isinstance(action,dict):
+    elif isinstance(action, dict):
         action_object = {
-                "type":action.get('type',ActionTypes.Raise),
-                "exec":action.get('exec',None)
-                }
-        action_object['data'] =  action if ('event' in action) else {}
+            "type": action.get("type", ActionTypes.Raise),
+            "exec": action.get("exec", None),
+        }
+        action_object["data"] = action if ("event" in action) else {}
     else:
         # TODO TD, some validation required that object has a type and exec attribute
         #     const exec = getActionFunction(action.type, actionFunctionMap);
@@ -172,10 +179,7 @@ def to_action_object(action:Action,action_function_map:ActionFunctionMap):
             #         ...action,
             #         exec
             #       };
-            action_object = {
-                    **action,
-                    **{"exec":exec}
-                  }
+            action_object = {**action, **{"exec": exec}}
         #     } else if (exec) {
         elif exec:
             #       const actionType = exec.type || action.type;
@@ -183,20 +187,16 @@ def to_action_object(action:Action,action_function_map:ActionFunctionMap):
             #       actionObject = {
             #         ...exec,
             #         ...action,
-            #         type: actionType
+            #         type : actionType
             #       } as ActionObject<TContext, TEvent>;
-            action_object = {
-                    **exec,
-                    **action,
-                    **{"type": action_type}
-                  } 
+            action_object = {**exec, **action, **{"type": action_type}}
 
         #     } else {
         else:
             #       actionObject = action as ActionObject<TContext, TEvent>;
             #     }
             #   }
-            action_object = action 
+            action_object = action
 
     #   return actionObject;
     return Action(**action_object)
@@ -217,12 +217,13 @@ def to_action_object(action:Action,action_function_map:ActionFunctionMap):
 #   );
 # };
 
+
 def to_action_objects(
-        action: Union[Action,List[Action]],
-        action_function_map: Any  # TODO: define types: ActionFunctionMap<TContext, TEvent>
-    )->List[ActionObject]: 
+    action: Union[Action, List[Action]],
+    action_function_map: Any,  # TODO: define types: ActionFunctionMap<TContext, TEvent>
+) -> List[ActionObject]:
     if not action:
         return []
-    actions = action if isinstance(action,List) else [action]
+    actions = action if isinstance(action, List) else [action]
 
-    return [ to_action_object(sub_action,action_function_map) for sub_action in actions]
+    return [to_action_object(sub_action, action_function_map) for sub_action in actions]

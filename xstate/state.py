@@ -1,4 +1,6 @@
-from __future__ import annotations #  PEP 563:__future__.annotations will become the default in Python 3.11
+from __future__ import (
+    annotations,
+)  #  PEP 563:__future__.annotations will become the default in Python 3.11
 from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
 from xstate.transition import Transition
 
@@ -7,10 +9,11 @@ from xstate.algorithm import get_state_value
 if TYPE_CHECKING:
     from xstate.action import Action
     from xstate.state_node import StateNode
-    # TODO WIP (history) - 
+
+    # TODO WIP (history) -
     # from xstate.???? import History
 
-from anytree import Node, RenderTree,LevelOrderIter
+from anytree import Node, RenderTree, LevelOrderIter
 
 
 class State:
@@ -19,9 +22,12 @@ class State:
     context: Dict[str, Any]
     actions: List["Action"]
     # TODO WIP (history) - fix types
-    history_value: List[Any] # List["History"] #The tree representing historical values of the state nodes
-    history: Any #State  #The previous state    
+    history_value: List[
+        Any
+    ]  # List["History"] #The tree representing historical values of the state nodes
+    history: Any  # State  #The previous state
     transitions: List["Transition"]
+
     def __init__(
         self,
         configuration: Set["StateNode"],
@@ -34,9 +40,9 @@ class State:
         self.value = get_state_value(root, configuration)
         self.context = context
         self.actions = actions
-        self.history_value = kwargs.get("history_value",None)
-        self.history = kwargs.get("history",None)
-        self.transitions = kwargs.get("transitions",[])
+        self.history_value = kwargs.get("history_value", None)
+        self.history = kwargs.get("history", None)
+        self.transitions = kwargs.get("transitions", [])
 
     # TODO: __repr__ and __str__ should be swapped,  __repr__ should be able to instantiate an instance
 
@@ -56,27 +62,40 @@ class State:
                 "actions": self.actions,
             }
         )
+
     def __str__(self):
         # configuration is a set, we need an algorithim to walk the set and produce an ordered list
-        #Why:  [state.id for state in self.configuration]    # produces unsorted with machine prefix `['test_states.two.deep', 'test_states.two', 'test_states.two.deep.foo']`
-
+        # Why:  [state.id for state in self.configuration]    # produces unsorted with machine prefix `['test_states.two.deep', 'test_states.two', 'test_states.two.deep.foo']`
 
         # build dict of child:parent
-        relationships = {state.id:state.parent.id if state.parent else None for state in self.configuration}
-        # find root node, ie has parent and without a '.' in the parent id 
-        roots = [(child,parent) for child,parent in relationships.items() if parent and '.' not in parent ]
-        assert len(roots) ==1, 'Invalid Root, can only be 1 root and must be at least 1 root'
+        relationships = {
+            state.id: state.parent.id if state.parent else None
+            for state in self.configuration
+        }
+        # find root node, ie has parent and without a '.' in the parent id
+        roots = [
+            (child, parent)
+            for child, parent in relationships.items()
+            if parent and "." not in parent
+        ]
+        assert (
+            len(roots) == 1
+        ), "Invalid Root, can only be 1 root and must be at least 1 root"
 
-        relatives = {child:parent for child,parent in relationships.items() if parent and '.' in parent}
-        child,parent = roots[0]
+        relatives = {
+            child: parent
+            for child, parent in relationships.items()
+            if parent and "." in parent
+        }
+        child, parent = roots[0]
         root_node = Node(parent)
-        added={}
+        added = {}
         added[child] = Node(child, parent=root_node)
         while relatives:
             for child, parent in relatives.items():
                 if parent in added:
-                    
-                    added[child]=Node(child, parent=added[parent])
+
+                    added[child] = Node(child, parent=added[parent])
                     relatives.pop(child)
                     break
                 # Should have no parent as None, because we have already determined the root
@@ -91,12 +110,13 @@ class State:
         #     print("%s%s" % (pre, node.name))
 
         states_ordered = [node.name for node in LevelOrderIter(root_node)]
-        root_state=states_ordered[0]+"."
-        #ignore the root state
-        states_ordered = [state.replace(root_state,"") for state in states_ordered[1:]]
+        root_state = states_ordered[0] + "."
+        # ignore the root state
+        states_ordered = [state.replace(root_state, "") for state in states_ordered[1:]]
         return repr(states_ordered)
 
         # return f"""{self.__class__.__name__}(configuration={'<WIP a Set["StateNode"]>'}, context={self.context} , actions={self.actions})"""
+
 
 StateType = Union[str, State]
 StateValue = str

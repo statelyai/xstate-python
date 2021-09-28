@@ -1,6 +1,15 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable,TypeVar, Generic, \
-    Union, Dict, Any, List, Callable
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    TypeVar,
+    Generic,
+    Union,
+    Dict,
+    Any,
+    List,
+    Callable,
+)
 
 # T = TypeVar('T')
 
@@ -10,12 +19,10 @@ from dataclasses import dataclass
 if TYPE_CHECKING:
     from xstate.action import Action
     from xstate.state import State
-    from xstate.types import (
-        StateValueMap
-        )
+    from xstate.types import StateValueMap
 
 # from xstate.state import State
-State=Any
+State = Any
 """
 //from: xstate/packages/core/src/types.ts
 
@@ -33,7 +40,7 @@ EventType = str
 # export type ActionType = string;
 ActionType = str
 # export type MetaObject = Record<string, any>;
-MetaObject = Record[str,Any]
+MetaObject = Record[str, Any]
 
 # /**
 #  * The full definition of an event, with a string `type`.
@@ -42,8 +49,9 @@ MetaObject = Record[str,Any]
 #   /**
 #    * The type of event that is sent.
 #    */
-#   type: string;
+#   type : string;
 # }
+
 
 @dataclass
 class EventObject:
@@ -51,9 +59,11 @@ class EventObject:
 
     Args:
         type (str): The type of event that is sent.
-        
+
     """
+
     type: str
+
 
 """
 export interface AnyEventObject extends EventObject {
@@ -65,7 +75,7 @@ export interface AnyEventObject extends EventObject {
 #   /**
 #    * The type of action that is executed.
 #    */
-#   type: string;
+#   type : string;
 #   [other: string]: any;
 # }
 @dataclass
@@ -78,7 +88,7 @@ class BaseActionObject:
 #  * The full definition of an action, with a string `type` and an
 #  * `exec` implementation function.
 #  */
- 
+
 # export interface ActionObject<TContext, TEvent extends EventObject>
 #   extends BaseActionObject {
 #   /**
@@ -87,9 +97,11 @@ class BaseActionObject:
 #   exec?: ActionFunction<TContext, TEvent>;
 # }
 
+
 @dataclass
 class ActionObject(BaseActionObject):
     exec: ActionFunction
+
 
 """
 export type DefaultContext = Record<string, any> | undefined;
@@ -133,7 +145,7 @@ export interface AssignMeta<TContext, TEvent extends EventObject> {
 # ) => void;
 
 # TODO: implement properly
-ActionFunction=Callable
+ActionFunction = Callable
 
 """
 export interface ChooseConditon<TContext, TEvent extends EventObject> {
@@ -145,7 +157,7 @@ export interface ChooseConditon<TContext, TEvent extends EventObject> {
 #   | ActionType
 #   | ActionObject<TContext, TEvent>
 #   | ActionFunction<TContext, TEvent>;
-Action = Union[ActionFunction,ActionObject]
+Action = Union[ActionFunction, ActionObject]
 """
 /**
  * Extracts action objects that have no extra properties.
@@ -189,11 +201,10 @@ export type BaseActions<
 # export type Actions<TContext, TEvent extends EventObject> = SingleOrArray<
 #   Action<TContext, TEvent>
 # >;
-Actions = Union[Action,List[Action]]
+Actions = Union[Action, List[Action]]
 
 # export type StateKey = string | State<any>;
 StateKey = Union[str, State]
-
 
 
 """
@@ -208,13 +219,12 @@ StateKey = Union[str, State]
 #   [key: string]: StateValue;
 # }
 # StateValueMap = Dict[str,StateValue] # TODO TD Workaround for circular  StateValue with StateValueMap
-StateValueMap = Dict[str,Any]
+StateValueMap = Dict[str, Any]
 
 
-#export type StateValue = string | StateValueMap;
+# export type StateValue = string | StateValueMap;
 StateValue = Union[str, StateValueMap]
 
-    
 
 """
 type KeysWithStates<
@@ -244,8 +254,9 @@ export type ExtractStateValue<
 # }
 @dataclass
 class HistoryValue(EventObject):
-    states: Record  #<string, HistoryValue | undefined>;
+    states: Record  # <string, HistoryValue | undefined>;
     current: Union[StateValue, None]
+
 
 """
 export type ConditionPredicate<TContext, TEvent extends EventObject> = (
@@ -301,6 +312,8 @@ export interface TransitionConfig<TContext, TEvent extends EventObject> {
   meta?: Record<string, any>;
 }
 """
+
+
 @dataclass
 class TransitionConfig(EventObject):
     cond: Condition
@@ -309,6 +322,8 @@ class TransitionConfig(EventObject):
     internal: bool
     target: TransitionTarget
     meta: Record
+
+
 """
 export interface TargetTransitionConfig<TContext, TEvent extends EventObject>
   extends TransitionConfig<TContext, TEvent> {
@@ -808,12 +823,12 @@ export type SimpleOrStateNodeConfig<
 #     | ActionFunction<
 #         TContext,
 #         TEvent,
-#         TAction extends { type: K } ? TAction : never
+#         TAction extends { type : K } ? TAction : never
 #       >;
 # };
 
-ActionFunctionMap=ActionObject
-#TODO: need to implement the following for ActionFunctionMap
+ActionFunctionMap = ActionObject
+# TODO: need to implement the following for ActionFunctionMap
 #   TContext,
 #   TEvent extends EventObject,
 #   TAction extends ActionObject<TContext, TEvent> = ActionObject<
@@ -826,7 +841,7 @@ ActionFunctionMap=ActionObject
 #     | ActionFunction<
 #         TContext,
 #         TEvent,
-#         TAction extends { type: K } ? TAction : never
+#         TAction extends { type : K } ? TAction : never
 #       >;
 # };
 
@@ -1017,27 +1032,29 @@ export interface TransitionData<TContext, TEvent extends EventObject> {
 #   Choose = 'xstate.choose'
 # }
 
+
 class ActionTypes(Enum):
-  Start = 'xstate.start',
-  Stop = 'xstate.stop',
-  Raise = 'xstate.raise',
-  Send = 'xstate.send',
-  Cancel = 'xstate.cancel',
-  NullEvent = '',
-  Assign = 'xstate.assign',
-  After = 'xstate.after',
-  DoneState = 'done.state',
-  DoneInvoke = 'done.invoke',
-  Log = 'xstate.log',
-  Init = 'xstate.init',
-  Invoke = 'xstate.invoke',
-  ErrorExecution = 'error.execution',
-  ErrorCommunication = 'error.communication',
-  ErrorPlatform = 'error.platform',
-  ErrorCustom = 'xstate.error',
-  Update = 'xstate.update',
-  Pure = 'xstate.pure',
-  Choose = 'xstate.choose'
+    Start = ("xstate.start",)
+    Stop = ("xstate.stop",)
+    Raise = ("xstate.raise",)
+    Send = ("xstate.send",)
+    Cancel = ("xstate.cancel",)
+    NullEvent = ("",)
+    Assign = ("xstate.assign",)
+    After = ("xstate.after",)
+    DoneState = ("done.state",)
+    DoneInvoke = ("done.invoke",)
+    Log = ("xstate.log",)
+    Init = ("xstate.init",)
+    Invoke = ("xstate.invoke",)
+    ErrorExecution = ("error.execution",)
+    ErrorCommunication = ("error.communication",)
+    ErrorPlatform = ("error.platform",)
+    ErrorCustom = ("xstate.error",)
+    Update = ("xstate.update",)
+    Pure = ("xstate.pure",)
+    Choose = "xstate.choose"
+
 
 """
 export interface RaiseAction<TEvent extends EventObject> {
@@ -1269,9 +1286,11 @@ export interface ChooseAction<TContext, TEvent extends EventObject>
 #   };
 # }
 
+
 @dataclass
 class TransitionDefinition(TransitionConfig):
-    source: str 
+    source: str
+
 
 """
 export type TransitionDefinitionMap<TContext, TEvent extends EventObject> = {

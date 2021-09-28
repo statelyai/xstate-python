@@ -1,15 +1,16 @@
 from __future__ import annotations
-from multiprocessing import Condition #  PEP 563:__future__.annotations will become the default in Python 3.11
-from typing import  TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from multiprocessing import (
+    Condition,
+)  #  PEP 563:__future__.annotations will become the default in Python 3.11
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 
-
-# TODO: why does this cause pytest to fail, ImportError: cannot import name 'get_state_value' from 'xstate.algorithm' 
+# TODO: why does this cause pytest to fail, ImportError: cannot import name 'get_state_value' from 'xstate.algorithm'
 # Workaround: supress import and in `get_configuration_from_state` put state: [Dict,str]
 # from xstate.state import StateType
 
 
-from xstate.constants import  (
+from xstate.constants import (
     STATE_DELIMITER,
     TARGETLESS_KEY,
     DEFAULT_GUARD_TYPE,
@@ -31,7 +32,6 @@ from xstate.action_types import ActionTypes
 
 
 import js2py
-
 
 
 def compute_entry_set(
@@ -270,6 +270,7 @@ def is_in_final_state(state: StateNode, configuration: Set[StateNode]) -> bool:
     else:
         return False
 
+
 # /**
 #  * Returns an event that represents that a final state node
 #  * has been reached in the parent state node.
@@ -278,7 +279,7 @@ def is_in_final_state(state: StateNode, configuration: Set[StateNode]) -> bool:
 #  * @param data The data to pass into the event
 #  */
 # export function done(id: string, data?: any): DoneEventObject {
-def done(id:str,data:Any)->DoneEventObject:
+def done(id: str, data: Any) -> DoneEventObject:
     """Returns an event that represents that a final state node
     has been reached in the parent state node.
 
@@ -296,18 +297,14 @@ def done(id:str,data:Any)->DoneEventObject:
     #     type,
     #     data
     #   };
-    event_object = {
-        "type":type,
-        "data":data
-      }
+    event_object = {"type": type, "data": data}
 
-    #TODO: implement this
+    # TODO: implement this
     #   eventObject.toString = () => type;
 
     #   return eventObject as DoneEvent;
     return event_object
     # }
-
 
 
 def enter_states(
@@ -317,7 +314,7 @@ def enter_states(
     history_value: HistoryValue,
     actions: List[Action],
     internal_queue: List[Event],
-    transitions:List[Transition]
+    transitions: List[Transition],
 ) -> Tuple[Set[StateNode], List[Action], List[Event]]:
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
@@ -364,7 +361,7 @@ def enter_states(
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
                     # transitions.add("TRANSITION") #TODO WIP 21W39
 
-    return (configuration, actions, internal_queue,transitions)
+    return (configuration, actions, internal_queue, transitions)
 
 
 def exit_states(
@@ -505,10 +502,10 @@ def main_event_loop(
 ) -> Tuple[Set[StateNode], List[Action]]:
     states_to_invoke: Set[StateNode] = set()
     history_value = {}
-    transitions=set()
+    transitions = set()
     enabled_transitions = select_transitions(event=event, configuration=configuration)
-    transitions=transitions.union(enabled_transitions)
-    (configuration, actions, internal_queue,transitions) = microstep(
+    transitions = transitions.union(enabled_transitions)
+    (configuration, actions, internal_queue, transitions) = microstep(
         enabled_transitions,
         configuration=configuration,
         states_to_invoke=states_to_invoke,
@@ -516,18 +513,21 @@ def main_event_loop(
         transitions=transitions,
     )
 
-    (configuration, actions,transitions) = macrostep(
-        configuration=configuration, 
-        actions=actions, 
+    (configuration, actions, transitions) = macrostep(
+        configuration=configuration,
+        actions=actions,
         internal_queue=internal_queue,
         transitions=transitions,
     )
 
-    return (configuration, actions,transitions)
+    return (configuration, actions, transitions)
 
 
 def macrostep(
-    configuration: Set[StateNode], actions: List[Action], internal_queue: List[Event], transitions:List[Transition]
+    configuration: Set[StateNode],
+    actions: List[Action],
+    internal_queue: List[Event],
+    transitions: List[Transition],
 ) -> Tuple[Set[StateNode], List[Action]]:
     enabled_transitions = set()
     macrostep_done = False
@@ -545,7 +545,7 @@ def macrostep(
                     configuration=configuration,
                 )
         if enabled_transitions:
-            (configuration, actions, internal_queue,transitions) = microstep(
+            (configuration, actions, internal_queue, transitions) = microstep(
                 enabled_transitions=enabled_transitions,
                 configuration=configuration,
                 states_to_invoke=set(),  # TODO
@@ -553,7 +553,7 @@ def macrostep(
                 transitions=transitions,
             )
 
-    return (configuration, actions,transitions)
+    return (configuration, actions, transitions)
 
 
 def execute_transition_content(
@@ -567,7 +567,7 @@ def execute_transition_content(
 
 
 def execute_content(action: Action, actions: List[Action], internal_queue: List[Event]):
-    if action.type==ActionTypes.Raise or action.type == "xstate:raise":
+    if action.type == ActionTypes.Raise or action.type == "xstate:raise":
         internal_queue.append(Event(name=action.data.get("event")))
     else:
         actions.append(action)
@@ -603,16 +603,18 @@ def microstep(
         history_value=history_value,
         actions=actions,
         internal_queue=internal_queue,
-        transitions=transitions
+        transitions=transitions,
     )
 
-    return (configuration, actions, internal_queue,transitions)
+    return (configuration, actions, internal_queue, transitions)
+
 
 def is_machine(value):
-  try:
-    return '__xstatenode' in value
-  except:
-    return False
+    try:
+        return "__xstatenode" in value
+    except:
+        return False
+
 
 # export function toGuard<TContext, TEvent extends EventObject>(
 #   condition?: Condition<TContext, TEvent>,
@@ -620,52 +622,52 @@ def is_machine(value):
 # ): Guard<TContext, TEvent> | undefined {
 
 
-def to_guard(condition: Condition, guardMap:Record) -> Guard:
+def to_guard(condition: Condition, guardMap: Record) -> Guard:
     #   if (!condition) {
     #     return undefined;
     #   }
-    if condition==None:
+    if condition == None:
         return None
 
     #   if (isString(condition)) {
     #     return {
-    #       type: DEFAULT_GUARD_TYPE,
+    #       type : DEFAULT_GUARD_TYPE,
     #       name: condition,
     #       predicate: guardMap ? guardMap[condition] : undefined
     #     };
     #   }
 
-    if isinstance(condition,str):
+    if isinstance(condition, str):
         return {
-          "type": DEFAULT_GUARD_TYPE,
-          "name": condition,
-          "predicate":  guardMap[condition] if guardMap else None
+            "type": DEFAULT_GUARD_TYPE,
+            "name": condition,
+            "predicate": guardMap[condition] if guardMap else None,
         }
-    
+
     #   if (isFunction(condition)) {
     #     return {
-    #       type: DEFAULT_GUARD_TYPE,
+    #       type : DEFAULT_GUARD_TYPE,
     #       name: condition.name,
     #       predicate: condition
     #     };
     #   }
 
-
     if callable(condition):
         return {
-          "type": DEFAULT_GUARD_TYPE,
-          "name": condition['name'],
-          "predicate": condition
+            "type": DEFAULT_GUARD_TYPE,
+            "name": condition["name"],
+            "predicate": condition,
         }
 
     #   return condition;
     return condition
 
 
-def to_array_strict(value:Any)->List: 
-    if isinstance(value,List):
+def to_array_strict(value: Any) -> List:
+    if isinstance(value, List):
         return value
     return [value]
+
 
 # export function toArray<T>(value: T[] | T | undefined): T[] {
 #   if (value === undefined) {
@@ -673,20 +675,22 @@ def to_array_strict(value:Any)->List:
 #   }
 #   return toArrayStrict(value);
 # }
-def to_array(value: Union[str,List, None])->List:
-  if not value:
-    return []
-  
-  return to_array_strict(value)
+def to_array(value: Union[str, List, None]) -> List:
+    if not value:
+        return []
+
+    return to_array_strict(value)
 
 
 # ===================
-def to_transition_config_array(event,configLike)-> List:
-    transitions = {{'target':transition_like,'event':event} for transition_like in to_array_strict(configLike) 
+def to_transition_config_array(event, configLike) -> List:
+    transitions = {
+        {"target": transition_like, "event": event}
+        for transition_like in to_array_strict(configLike)
         if (
-        #   isinstance(transition_like,'undefined') or
-          isinstance(transition_like,str) or
-          is_machine(transition_like)
+            #   isinstance(transition_like,'undefined') or
+            isinstance(transition_like, str)
+            or is_machine(transition_like)
         )
     }
     return transitions
@@ -702,18 +706,19 @@ def to_transition_config_array(event,configLike)-> List:
 # }
 
 
-def normalize_target( target: Union[List[str],StateNode]
-        )->Union[List[str],StateNode]: 
-        
-  if not target or target == TARGETLESS_KEY:
-    return None
-  
-  return to_array(target)
+def normalize_target(
+    target: Union[List[str], StateNode]
+) -> Union[List[str], StateNode]:
+
+    if not target or target == TARGETLESS_KEY:
+        return None
+
+    return to_array(target)
 
 
-
-def flatten(t:List)->List:
+def flatten(t: List) -> List:
     return [item for sublist in t for item in sublist]
+
 
 def get_configuration_from_state(
     from_node: StateNode,
@@ -721,8 +726,8 @@ def get_configuration_from_state(
     partial_configuration: Set[StateNode],
 ) -> Set[StateNode]:
     # TODO TD: isinstance(state,State) requires import which generates circular dependencie issues
-    if str(type(state))=="<class 'xstate.state.State'>":
-        state_value=state.value
+    if str(type(state)) == "<class 'xstate.state.State'>":
+        state_value = state.value
     else:
         state_value = state
     if isinstance(state_value, str):
@@ -737,39 +742,34 @@ def get_configuration_from_state(
 
     return partial_configuration
 
+
 # TODO REMOVE an try and resolving some test cases
 def DEV_get_configuration_from_state(
     from_node: StateNode,
     state: Union[Dict, str],
     # state: Union[Dict, StateType],
-
     partial_configuration: Set[StateNode],
 ) -> Set[StateNode]:
     if isinstance(state, str):
-        state=from_node.states.get(state)
+        state = from_node.states.get(state)
         partial_configuration.add(state)
-    elif isinstance(state,dict):
+    elif isinstance(state, dict):
         for key in state.keys():
             node = from_node.states.get(key)
             partial_configuration.add(node)
-            get_configuration_from_state(
-                node, state.get(key), partial_configuration
-            )
-    elif str(type(state))=="<class 'xstate.state.State'>":
+            get_configuration_from_state(node, state.get(key), partial_configuration)
+    elif str(type(state)) == "<class 'xstate.state.State'>":
         for state_node in state.configuration:
             node = from_node.states.get(state_node.key)
             partial_configuration.add(node)
-            get_configuration_from_state(
-                node, state_node, partial_configuration
-            )
-    elif str(type(state))=="<class 'xstate.state_node.StateNode'>":
+            get_configuration_from_state(node, state_node, partial_configuration)
+    elif str(type(state)) == "<class 'xstate.state_node.StateNode'>":
         for key in state.config.keys():
             node = from_node.states.get(key)
             partial_configuration.add(node)
             get_configuration_from_state(
                 node, state.config.get(key), partial_configuration
             )
-
 
     return partial_configuration
 
@@ -794,25 +794,25 @@ def get_state_value(state_node: StateNode, configuration: Set[StateNode]):
     return get_value_from_adj(state_node, get_adj_list(configuration))
 
 
-def  to_state_path(state_id: str, delimiter: str=".") -> List[str]:
-  try:
-    if isinstance(state_id,List):
-        return state_id
+def to_state_path(state_id: str, delimiter: str = ".") -> List[str]:
+    try:
+        if isinstance(state_id, List):
+            return state_id
 
-    return state_id.split(delimiter)
-  except Exception as e:
-      raise Exception(f"{state_id} is not a valid state path")
-    
-  
-def is_state_like(state: any)-> bool: 
-  return (
-    isinstance(state, object)
-    and 'value' in vars(state)
-    and 'context' in vars(state)
-    # TODO : Eventing to be enabled sometime
-    # and 'event' in vars(state)
-    # and '_event' in vars(state)
-  )
+        return state_id.split(delimiter)
+    except Exception as e:
+        raise Exception(f"{state_id} is not a valid state path")
+
+
+def is_state_like(state: any) -> bool:
+    return (
+        isinstance(state, object)
+        and "value" in vars(state)
+        and "context" in vars(state)
+        # TODO : Eventing to be enabled sometime
+        # and 'event' in vars(state)
+        # and '_event' in vars(state)
+    )
 
 
 # export function toStateValue(
@@ -876,44 +876,45 @@ def get_value_from_adj(state_node: StateNode, adj_list: Dict[str, Set[StateNode]
 
     return state_value
 
-def  map_values(collection: Dict[str,Any], iteratee: Callable):
-  result = {}
-  collectionKeys = collection.keys()
 
-  for i,key in enumerate(collection.keys()):
-    args = (collection[key], key, collection, i)
-    result[key] = iteratee(*args)
- 
-  return result
+def map_values(collection: Dict[str, Any], iteratee: Callable):
+    result = {}
+    collectionKeys = collection.keys()
+
+    for i, key in enumerate(collection.keys()):
+        args = (collection[key], key, collection, i)
+        result[key] = iteratee(*args)
+
+    return result
 
 
 def update_history_states(hist, state_value):
-  
-  def lambda_function(sub_hist, key):
-    if not sub_hist:
-        return None
+    def lambda_function(sub_hist, key):
+        if not sub_hist:
+            return None
 
+        sub_state_value = (
+            None
+            if isinstance(state_value, str)
+            else (state_value[key] or (sub_hist.current if sub_hist else None))
+        )
 
-    sub_state_value = None  if isinstance(state_value, str) else  (state_value[key] or (sub_hist.current if sub_hist else None))
+        if not sub_state_value:
+            return None
 
-    if not sub_state_value:
-      return None
-    
+        return {
+            "current": sub_state_value,
+            "states": update_history_states(sub_hist, sub_state_value),
+        }
 
-    return {
-      "current": sub_state_value,
-      "states": update_history_states(sub_hist, sub_state_value)
-    }
-  return map_values(hist.states, lambda sub_hist, key : lambda_function(sub_hist, key))
+    return map_values(hist.states, lambda sub_hist, key: lambda_function(sub_hist, key))
+
 
 def update_history_value(hist, state_value):
-  return {
-    "current": state_value,
-    "states": update_history_states(hist, state_value)
-  }
+    return {"current": state_value, "states": update_history_states(hist, state_value)}
 
 
-def get_configuration_from_js(config:str) -> dict: 
+def get_configuration_from_js(config: str) -> dict:
     """Translates a JS config to a xstate_python configuration dict
     config: str  a valid javascript snippet of an xstate machine
     Example

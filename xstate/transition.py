@@ -1,11 +1,9 @@
 from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Union
 
-from xstate.algorithm import (
-    get_configuration_from_js
-)
+from xstate.algorithm import get_configuration_from_js
 
 
-from xstate.action import Action,to_action_objects
+from xstate.action import Action, to_action_objects
 from xstate.event import Event
 
 if TYPE_CHECKING:
@@ -37,7 +35,11 @@ class Transition:
         order: int,
         cond: Optional[CondFunction] = None,
     ):
-        if isinstance(config,str) and config.lstrip()[0]=="{" and config.rstrip()[-1]=="}":
+        if (
+            isinstance(config, str)
+            and config.lstrip()[0] == "{"
+            and config.rstrip()[-1] == "}"
+        ):
             try:
                 config = get_configuration_from_js(config)
             except Exception as e:
@@ -51,9 +53,11 @@ class Transition:
         self.cond = config.get("cond", None) if isinstance(config, dict) else None
         self.order = order
 
-        self.actions=to_action_objects(config.get("actions", []),
-                                 action_function_map=None
-            ) if isinstance(config, dict)  else []
+        self.actions = (
+            to_action_objects(config.get("actions", []), action_function_map=None)
+            if isinstance(config, dict)
+            else []
+        )
 
     @property
     def target(self) -> List["StateNode"]:

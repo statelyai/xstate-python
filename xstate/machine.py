@@ -1,4 +1,6 @@
-from __future__ import annotations #  PEP 563:__future__.annotations will become the default in Python 3.11
+from __future__ import (
+    annotations,
+)  #  PEP 563:__future__.annotations will become the default in Python 3.11
 from typing import TYPE_CHECKING, Dict, List, Union
 from xstate import transition
 
@@ -7,7 +9,7 @@ from xstate.algorithm import (
     get_configuration_from_state,
     macrostep,
     main_event_loop,
-    get_configuration_from_js
+    get_configuration_from_js,
 )
 
 if TYPE_CHECKING:
@@ -29,6 +31,7 @@ class Machine:
     Returns:
         [type]: [description]
     """
+
     id: str
     root: StateNode
     _id_map: Dict[str, StateNode]
@@ -36,7 +39,7 @@ class Machine:
     states: Dict[str, StateNode]
     actions: List[lambda: None]
 
-    def __init__(self, config: Union[Dict,str], actions={}):
+    def __init__(self, config: Union[Dict, str], actions={}):
         """[summary]
 
         Args:
@@ -46,18 +49,15 @@ class Machine:
         Raises:
             Exception: Invalid snippet of Javascript for Machine configuration
         """
-        if isinstance(config,str):
+        if isinstance(config, str):
             try:
                 config = get_configuration_from_js(config)
             except Exception as e:
                 raise f"Invalid snippet of Javascript for Machine configuration, Exception:{e}"
-        
+
         self.id = config.get("id", "(machine)")
         self._id_map = {}
-        self.root = StateNode(
-            config, machine=self, 
-            parent=None
-        )
+        self.root = StateNode(config, machine=self, parent=None)
         self.states = self.root.states
         self.config = config
         self.actions = actions
@@ -67,18 +67,25 @@ class Machine:
         # if isinstance(state,str):
         #     state = get_state(state)
         # BUG get_configuration_from_state should handle a str, state_value should be deterimed in the function
-        configuration = get_configuration_from_state( #TODO DEBUG FROM HERE
+        configuration = get_configuration_from_state(  # TODO DEBUG FROM HERE
             from_node=self.root, state=state, partial_configuration=set()
         )
-        #TODO WIP 21W39 implement transitions
+        # TODO WIP 21W39 implement transitions
         possible_transitions = list(configuration)[0].transitions
-        (configuration, _actions,transitons) = main_event_loop(configuration, Event(event))
+        (configuration, _actions, transitons) = main_event_loop(
+            configuration, Event(event)
+        )
 
         actions, warnings = self._get_actions(_actions)
         for w in warnings:
             print(w)
 
-        return State(configuration=configuration, context={}, actions=actions,transitions=transitons)
+        return State(
+            configuration=configuration,
+            context={},
+            actions=actions,
+            transitions=transitons,
+        )
 
     def _get_actions(self, actions) -> List[lambda: None]:
         result = []
@@ -132,22 +139,30 @@ class Machine:
 
     @property
     def initial_state(self) -> State:
-        (configuration, _actions, internal_queue,transitions) = enter_states(
+        (configuration, _actions, internal_queue, transitions) = enter_states(
             [self.root.initial],
             configuration=set(),
             states_to_invoke=set(),
             history_value={},
             actions=[],
             internal_queue=[],
-            transitions=[]
+            transitions=[],
         )
 
-        (configuration, _actions,transitions) = macrostep(
-            configuration=configuration, actions=_actions, internal_queue=internal_queue,transitions=transitions
+        (configuration, _actions, transitions) = macrostep(
+            configuration=configuration,
+            actions=_actions,
+            internal_queue=internal_queue,
+            transitions=transitions,
         )
 
         actions, warnings = self._get_actions(_actions)
         for w in warnings:
             print(w)
 
-        return State(configuration=configuration, context={}, actions=actions,transitions=transitions)
+        return State(
+            configuration=configuration,
+            context={},
+            actions=actions,
+            transitions=transitions,
+        )
