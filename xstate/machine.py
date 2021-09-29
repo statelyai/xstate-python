@@ -2,7 +2,8 @@ from __future__ import (
     annotations,
 )  #  PEP 563:__future__.annotations will become the default in Python 3.11
 from typing import TYPE_CHECKING, Dict, List, Union
-from xstate import transition
+
+# from xstate import transition
 
 from xstate.algorithm import (
     enter_states,

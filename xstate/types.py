@@ -32,7 +32,7 @@ State = Any
 # from xstate.state_node import StateNode
 StateNode = Any
 
-
+EMPTY_OBJECT = {}
 """
 //from: xstate/packages/core/src/types.ts
 

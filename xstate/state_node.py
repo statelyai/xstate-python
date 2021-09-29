@@ -1,10 +1,11 @@
 from __future__ import (
     annotations,
 )  #  PEP 563:__future__.annotations will become the default in Python 3.11
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 import logging
 
 logger = logging.getLogger(__name__)
+from functools import reduce
 
 from xstate import transition
 
@@ -23,7 +24,9 @@ from xstate.algorithm import (
     normalize_target,
     to_array_strict,
     to_state_value,
+    to_state_paths,
     is_machine,
+    is_leaf_node,
     to_array,
     to_guard,
     done,
@@ -35,7 +38,7 @@ from xstate.environment import IS_PRODUCTION, WILDCARD, STATE_IDENTIFIER, NULL_E
 
 if TYPE_CHECKING:
     from xstate.machine import Machine
-    from xstate.types import State, StateValue, StateLike
+    from xstate.types import State, StateValue, StateLike, EMPTY_OBJECT
 
 
 from xstate.state import State
@@ -45,11 +48,42 @@ def is_state_id(state_id: str) -> bool:
     return state_id[0] == STATE_IDENTIFIER
 
 
+# TODO TD implement __cache possibly in dataclass
+#   private __cache = {
+#     events: undefined as Array<TEvent['type']> | undefined,
+#     relativeValue: new Map() as Map<StateNode<TContext>, StateValue>,
+#     initialStateValue: undefined as StateValue | undefined,
+#     initialState: undefined as State<TContext, TEvent> | undefined,
+#     on: undefined as TransitionDefinitionMap<TContext, TEvent> | undefined,
+#     transitions: undefined as
+#       | Array<TransitionDefinition<TContext, TEvent>>
+#       | undefined,
+#     candidates: {} as {
+#       [K in TEvent['type'] | NullEvent['type'] | '*']:
+#         | Array<
+#             TransitionDefinition<
+#               TContext,
+#               K extends TEvent['type']
+#                 ? Extract<TEvent, { type: K }>
+#                 : EventObject
+#             >
+#           >
+#         | undefined;
+#     },
+#     delayedTransitions: undefined as
+#       | Array<DelayedTransitionDefinition<TContext, TEvent>>
+#       | undefined
+#   };
+
+
 class StateNode:
     on: Dict[str, List[Transition]]
     machine: "Machine"
     parent: Optional["StateNode"]
-    initial: Optional[Transition]
+    # TODO: verify this change of initial
+    # initial: Optional[Transition]
+    initial: Union[StateValue, str]
+
     entry: List[Action]
     exit: List[Action]
     donedata: Optional[Dict]
@@ -59,6 +93,7 @@ class StateNode:
     key: str
     states: Dict[str, "StateNode"]
     delimiter: str = STATE_DELIMITER
+    __cache: Any  # TODO TD see above JS and TODO for implement __cache
 
     def get_actions(self, action):
         """get_actions ( requires migration to newer implementation"""
@@ -279,6 +314,9 @@ class StateNode:
         key: str = None,
     ):
         self.config = config
+        # TODO: validate this change, initial was showing up as an event, but xstate.core has it initialized to config.initial
+        # {'event': None, 'source': 'd4', 'target': ['#e3'], 'cond': None, 'actions': [], 'type': 'external', 'order': -1}
+        self.initial = self.config.get("initial", None)
         self.parent = parent
         self.id = (
             config.get("id", parent.id + (("." + key) if key else ""))
@@ -339,19 +377,231 @@ class StateNode:
 
         machine._register(self)
 
-    @property
-    def initial(self):
-        initial_key = self.config.get("initial")
+    #   StateNode.prototype.getStateNodeById = function (stateId) {
+    def get_state_node_by_id(self, state_id: str):
+        """Returns the state node with the given `state_id`, or raises exception.
 
-        if not initial_key:
-            if self.type == "compound":
-                return Transition(
-                    next(iter(self.states.values())), source=self, event=None, order=-1
+        Args:
+            state_id (str): The state ID. The prefix "#" is removed.
+
+        Raises:
+            Exception: [description]
+
+        Returns:
+            StateNode: the state node with the given `state_id`, or raises exception.
+
+        """
+        #     var resolvedStateId = isStateId(stateId) ? stateId.slice(STATE_IDENTIFIER.length) : stateId;
+        resolved_state_id = (
+            state_id[len(STATE_IDENTIFIER)] if is_state_id(state_id) else state_id
+        )
+
+        #     if (resolvedStateId === this.id) {
+        #       return this;
+        #     }
+        if resolved_state_id == self.id:
+            return self
+
+        #     var stateNode = this.machine.idMap[resolvedStateId];
+        state_node = self.machine._id_map[resolved_state_id]
+
+        #     if (!stateNode) {
+        #       throw new Error("Child state node '#" + resolvedStateId + "' does not exist on machine '" + this.id + "'");
+        #     }
+        if not state_node:
+            msg = f"Child state node '#{resolved_state_id}' does not exist on machine '{self.id}'"
+            logger.error(msg)
+            raise Exception(msg)
+
+        #     return stateNode;
+        return state_node
+
+        #   };
+
+    def get_state_node_by_path(self, state_path: str) -> StateNode:
+        """Returns the relative state node from the given `statePath`, or throws.
+
+        Args:
+            statePath (string):The string or string array relative path to the state node.
+
+        Raises:
+            Exception: [??????]
+
+        Returns:
+            StateNode: the relative state node from the given `statePath`, or throws.
+        """
+
+        #     if (typeof statePath === 'string' && isStateId(statePath)) {
+        #       try {
+        #         return this.getStateNodeById(statePath.slice(1));
+        #       } catch (e) {
+        #         // try individual paths
+        #         // throw e;
+        #       }
+        #     }
+
+        if isinstance(state_path, str) and is_state_id(state_path):
+            try:
+                return self.get_state_node_by_id(state_path[1:].copy())
+            except Exception as e:
+                # // try individual paths
+                # // throw e;
+                pass
+
+            #     const arrayStatePath = toStatePath(statePath, this.delimiter).slice();
+            array_state_path = to_state_path(state_path, self.delimiter)[:].copy()
+            #     let currentStateNode: StateNode<TContext, any, TEvent, any> = this;
+            current_state_node = self
+
+            #     while (arrayStatePath.length) {
+            while len(array_state_path) > 0:
+                #       const key = arrayStatePath.shift()!;
+                key = (
+                    array_state_path.pop()
+                )  # TODO check equivaelance to js .shift()! , https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#non-null-assertion-operator
+                #       if (!key.length) {
+                #         break;
+                #       }
+
+                if len(key) == 0:
+                    break
+
+                #       currentStateNode = currentStateNode.getStateNode(key);
+                current_state_node = current_state_node.get_state_node(key)
+
+            #     return currentStateNode;
+            return current_state_node
+
+        #   private resolveTarget(
+        #     _target: Array<string | StateNode<TContext, any, TEvent>> | undefined
+        #   ): Array<StateNode<TContext, any, TEvent>> | undefined {
+
+    # TODO validate this removal of initial see __init__
+    # @property
+    # def initial(self):
+    #     initial_key = self.config.get("initial")
+
+    #     if not initial_key:
+    #         if self.type == "compound":
+    #             return Transition(
+    #                 next(iter(self.states.values())), source=self, event=None, order=-1
+    #             )
+    #     else:
+    #         return Transition(
+    #             self.states.get(initial_key), source=self, event=None, order=-1
+    #         )
+
+    #   public get initialStateNodes(): Array<StateNode<TContext, any, TEvent, any>> {
+    @property
+    def initial_state_nodes(self) -> List[StateNode]:
+
+        #     if (isLeafNode(this)) {
+        #       return [this];
+        #     }
+        if is_leaf_node(self):
+            return [self]
+
+        #     // Case when state node is compound but no initial state is defined
+        #     if (this.type === 'compound' && !this.initial) {
+        #       if (!IS_PRODUCTION) {
+        #         warn(false, `Compound state node '${this.id}' has no initial state.`);
+        #       }
+        #       return [this];
+        #     }
+
+        # Case when state node is compound but no initial state is defined
+        if self.type == "compound" and not self.initial:
+            if not IS_PRODUCTION:
+                logger.warning(
+                    f"Compound state node '${self.id}' has no initial state."
                 )
+            return [self]
+
+        #     const initialStateNodePaths = toStatePaths(this.initialStateValue!);
+        #     return flatten(
+        #       initialStateNodePaths.map((initialPath) =>
+        #         this.getFromRelativePath(initialPath)
+        #       )
+        #     );
+        #   }
+
+        initial_state_node_paths = to_state_paths(self.initial_state_value)
+        return flatten(
+            [
+                self.get_from_relative_path(initial_path)
+                for initial_path in initial_state_node_paths
+            ]
+        )
+
+    #   private get initialStateValue(): StateValue | undefined {
+    @property
+    def initial_state_value(self) -> Union[StateValue, None]:
+        #     if (this.__cache.initialStateValue) {
+        #       return this.__cache.initialStateValue;
+        #     }
+
+        # TODO: implement cache
+        # if self.__cache.initial_state_value is not None:
+        #     return self.__cache.initial_state_value
+
+        #     let initialStateValue: StateValue | undefined;
+        initial_state_value: Union[StateValue, None] = None
+
+        #     if (this.type === 'parallel') {
+        #       initialStateValue = mapFilterValues(
+        #         this.states as Record<string, StateNode<TContext, any, TEvent>>,
+        #         (state) => state.initialStateValue || EMPTY_OBJECT,
+        #         (stateNode) => !(stateNode.type === 'history')
+        #       );
+        if self.type == "parallel":
+            # TODO: wip
+            initial_state_value = [
+                state.initial_state_value
+                if state.initial_state_value is not None
+                else EMPTY_OBJECT
+                for state in self.states
+                if state.type != "history"
+            ]
+
+        #     } else if (this.initial !== undefined) {
+        #       if (!this.states[this.initial]) {
+        #         throw new Error(
+        #           `Initial state '${this.initial}' not found on '${this.key}'`
+        #         );
+        #       }
+        elif self.initial is not None:
+            if self.states.get(self.initial, None) is None:
+                msg = f"Initial state '{self.initial}' not found on '{self.key}'"
+                logger.error(msg)
+                raise Exception(msg)
+            #       initialStateValue = (isLeafNode(this.states[this.initial])
+            #         ? this.initial
+            #         : {
+            #             [this.initial]: this.states[this.initial].initialStateValue
+            #           }) as StateValue;
+            initial_state_value = (
+                self.initial
+                if is_leaf_node(self.states[self.initial])
+                else {self.initial: self.states[self.initial].initial_state_value}
+            )  # StateValue
+
+        #     } else {
+        #       // The finite state value of a machine without child states is just an empty object
+        #       initialStateValue = {};
+        #     }
         else:
-            return Transition(
-                self.states.get(initial_key), source=self, event=None, order=-1
-            )
+            # The finite state value of a machine without child states is just an empty object
+            initial_state_value = {}
+
+        #     this.__cache.initialStateValue = initialStateValue;
+        # TODO TD implement cache
+        # self.__cache.initial_state_value = initial_state_value
+
+        #     return this.__cache.initialStateValue;
+        # TODO TD implement cache
+        # return self.__cache.initial_state_value
+        return initial_state_value
+        #   }
 
     def _get_relative(self, target: str) -> "StateNode":
         if target.startswith("#"):
@@ -365,6 +615,62 @@ class StateNode:
             )
 
         return state_node
+
+        #   /**
+        #    * Retrieves state nodes from a relative path to this state node.
+        #    *
+        #    * @param relativePath The relative path from this state node
+        #    * @param historyValue
+        #    */
+        #   public getFromRelativePath(
+        #     relativePath: string[]
+        #   ): Array<StateNode<TContext, any, TEvent, any>> {
+
+    def get_from_relative_path(
+        self, relative_path: Union[str, List(str)]
+    ) -> List[StateNode]:
+
+        #     if (!relativePath.length) {
+        #       return [this];
+        #     }
+        if isinstance(relative_path, List) and len(relative_path) == 0:
+            return [self]
+
+        #     const [stateKey, ...childStatePath] = relativePath;
+        state_key, *child_state_path = relative_path
+
+        #     if (!this.states) {
+        #       throw new Error(
+        #         `Cannot retrieve subPath '${stateKey}' from node with no states`
+        #       );
+        #     }
+        if self.states is None:
+            msg = f"Cannot retrieve subPath '{state_key}' from node with no states"
+            logger.error(msg)
+            raise Exception(msg)
+
+        #     const childStateNode = this.getStateNode(stateKey);
+        child_state_node = self.get_state_node(state_key)
+
+        #     if (childStateNode.type === 'history') {
+        #       return childStateNode.resolveHistory();
+        #     }
+        if child_state_node.type == "history":
+            return child_state_node.resolve_history()
+
+        #     if (!this.states[stateKey]) {
+        #       throw new Error(
+        #         `Child state '${stateKey}' does not exist on '${this.id}'`
+        #       );
+        #     }
+
+        if self.states.get(state_key, None) is None:
+            msg = f"Child state '{state_key}' does not exist on '{self.id}'"
+            logger.error(msg)
+            raise Exception(msg)
+
+        #     return this.states[stateKey].getFromRelativePath(childStatePath);
+        return self.states[state_key].get_from_relative_path(child_state_path)
 
     def get_state_node(self, state_key: str) -> StateNode:
         #   public getStateNode(
@@ -432,7 +738,7 @@ class StateNode:
         #     if (!state) {
         #       return [];
         #     }
-        if not state:
+        if state is None:
             return []
 
         #     const stateValue =
@@ -476,7 +782,6 @@ class StateNode:
         sub_state_nodes.append(self)
 
         #     return subStateNodes.concat(
-        from functools import reduce
 
         # def full_union(input):
         #     """ Compute the union of a list of sets """
@@ -493,14 +798,19 @@ class StateNode:
             sub_state_node = self.get_state_node(sub_state_key).get_state_nodes(
                 state_value[sub_state_key]
             )
-            return all_sub_state_nodes.extend(sub_state_node)
+            all_sub_state_nodes.extend(sub_state_node if sub_state_node else [])
+            return all_sub_state_nodes
 
         def substate_node_reduce(sub_state_keys):
-            return reduce(reduce_fx, sub_state_keys, [])
+            initial_list = []
+            result_list = reduce(reduce_fx, sub_state_keys, initial_list)
+            return result_list
 
         #       }, [] as Array<StateNode<TContext, any, TEvent, TTypestate>>)
         #     );
-        return substate_node_reduce(self, sub_state_keys)
+        reduce_results = substate_node_reduce(sub_state_keys)
+        sub_state_nodes.extend(reduce_results)
+        return sub_state_nodes
 
 
 #   /**

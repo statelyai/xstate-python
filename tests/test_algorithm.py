@@ -109,7 +109,7 @@ class TestAlgorithims:
 
         c = get_configuration(prev_nodes, nodes)
 
-        assert [sn.id for sn in c].sort() == [
+        assert sorted([sn.id for sn in c]) == [
             "a",
             "b1",
             "c1",

@@ -275,7 +275,16 @@ def get_proper_ancestors(
 #   return keys(stateNode.states).map((key) => stateNode.states[key]);
 # }
 def get_children(state_node: StateNode) -> List[StateNode]:
-    return [state_node.states[key] for key in state_node.states].keys()
+    return [state_node.states[key] for key, state in state_node.states.items()]
+    # return state_node.states.keys()
+
+
+# export const isLeafNode = (stateNode: StateNode<any, any, any, any>) =>
+#   stateNode.type === 'atomic' || stateNode.type === 'final';
+
+
+def is_leaf_node(state_node: StateNode) -> bool:
+    return state_node.type == "atomic" or state_node.type == "final"
 
 
 def is_final_state(state_node: StateNode) -> bool:
@@ -757,37 +766,6 @@ def flatten(t: List) -> List:
     return [item for sublist in t for item in sublist]
 
 
-def get_adj_list(configuration: Configuration) -> AdjList:
-    # export function getAdjList<TC, TE extends EventObject>(
-    #   configuration: Configuration<TC, TE>
-    # ): AdjList<TC, TE> {
-    #   const adjList: AdjList<TC, TE> = new Map();
-    adjList: AdjList = {}
-
-    #   for (const s of configuration) {
-    for s in configuration:
-        #     if (!adjList.has(s)) {
-        #       adjList.set(s, []);
-        if s not in adjList:
-            adjList[s] = []
-
-        #     if (s.parent) {
-        if s.parent:
-            #       if (!adjList.has(s.parent)) {
-            if s.parent not in adjList:
-                #         adjList.set(s.parent, []);
-                adjList[s.parent] = []
-
-        #       adjList.get(s.parent)!.push(s);
-        adjList[s.parent].append(s)
-
-    #   return adjList;
-    return adjList
-
-
-# }
-
-
 def get_configuration(
     prev_state_nodes: Iterable[StateNode], state_nodes: Iterable[StateNode]
 ) -> Iterable[StateNode]:
@@ -799,10 +777,10 @@ def get_configuration(
 
     #   const prevConfiguration = new Set(prevStateNodes);
     #   const prevAdjList = getAdjList(prevConfiguration);
-    prev_configuration = Set(prev_state_nodes)
+    prev_configuration = set(prev_state_nodes)
     prev_adj_list = get_adj_list(prev_configuration)
 
-    configuration = Set(state_nodes)
+    configuration = set(state_nodes)
 
     #   // add all ancestors
     #   for (const s of configuration) {
@@ -814,9 +792,11 @@ def get_configuration(
     #     }
     #   }
 
-    for s in configuration:
+    # for s in configuration:
+    current_configuration = configuration.copy()
+    for s in current_configuration:
         m = s.parent
-        while m and m not in configuration:
+        while m and m not in current_configuration:
             configuration.add(m)
             m = m.parent
 
@@ -825,16 +805,17 @@ def get_configuration(
 
     #   // add descendants
     #   for (const s of configuration) {
-    for s in configuration:
+    current_configuration = configuration.copy()
+    for s in current_configuration:
 
         #     // if previously active, add existing child nodes
         #     if (s.type === 'compound' && (!adjList.get(s) || !adjList.get(s)!.length)) {
-        if s.type == "compound" and (not adjList[s] or len(adjList[s] > 0)):
+        if s.type == "compound" and (s.id not in adjList or len(adjList[s.id]) == 0):
 
             #       if (prevAdjList.get(s)) {
-            if prev_adj_list[s]:
+            if prev_adj_list.get(s.id, None):
                 #         prevAdjList.get(s)!.forEach((sn) => configuration.add(sn));
-                [configuration.add(sn) for sn in prev_adj_list[s]]
+                [configuration.add(sn) for sn in prev_adj_list.get(s.id, None)]
             #       } else {
             else:
                 #         s.initialStateNodes.forEach((sn) => configuration.add(sn));
@@ -853,7 +834,7 @@ def get_configuration(
                     #           }
 
                     #           if (!configuration.has(child)) {
-                    if not child in configuration:
+                    if child not in current_configuration:
                         #             configuration.add(child);
                         configuration.add(child)
 
@@ -864,7 +845,7 @@ def get_configuration(
                         #             } else {
                         else:
                             #               child.initialStateNodes.forEach((sn) => configuration.add(sn));
-                            [configuration.add(sn) for sn in child.initialStateNodes]
+                            [configuration.add(sn) for sn in child.initial_state_nodes]
         #             }
         #           }
         #         }
@@ -872,19 +853,20 @@ def get_configuration(
         #     }
         #   }
 
-        #   // add all ancestors
-        #   for (const s of configuration) {
-        for s in configuration:
+    #   // add all ancestors
+    #   for (const s of configuration) {
+    current_configuration = configuration
+    for s in current_configuration:
 
-            #     let m = s.parent;
-            m = s.parent
+        #     let m = s.parent;
+        m = s.parent
 
-            #     while (m && !configuration.has(m)) {
-            #       configuration.add(m);
-            #       m = m.parent;
-            while m and m not in configuration:
-                configuration.add(m)
-                m = m.parent
+        #     while (m && !configuration.has(m)) {
+        #       configuration.add(m);
+        #       m = m.parent;
+        while m and m not in current_configuration:
+            configuration.add(m)
+            m = m.parent
 
     #     }
     #   }
@@ -1060,19 +1042,24 @@ def to_state_value(
     if isinstance(state_value, List):
         return path_to_state_value(to_state_value)
 
-    #   if (typeof stateValue !== 'string') {
-    #     return stateValue as StateValue;
-    #   }
+    # if (typeof stateValue !== 'string') {
+    #     return stateValue;
+    # }
+    if not isinstance(state_value, str):
+        return state_value
+
+    # for a js config snippet
     if isinstance(state_value, str):
         # TODO: do we really have to process js snippets
         if is_possible_js_config_snippet(state_value):
-            state_value = repr(get_configuration_from_js(state_value))
-        return state_value
-
-    #   const statePath = toStatePath(stateValue as string, delimiter);
-    state_path = to_state_path(state_value, delimiter)
-    #   return pathToStateValue(statePath);
-    return path_to_state_value(state_path)
+            # state_value = repr(get_configuration_from_js(state_value))
+            state_value = get_configuration_from_js(state_value)
+            return state_value
+        else:
+            #   const statePath = toStatePath(stateValue as string, delimiter);
+            state_path = to_state_path(state_value, delimiter)
+            #   return pathToStateValue(statePath);
+            return path_to_state_value(state_path)
     # }
 
 
@@ -1084,6 +1071,53 @@ def to_state_path(state_id: str, delimiter: str = ".") -> List[str]:
         return state_id.split(delimiter)
     except Exception as e:
         raise Exception(f"{state_id} is not a valid state path")
+
+
+# export function toStatePaths(stateValue: StateValue | undefined): string[][] {
+def to_state_paths(state_value: Union[StateValue, None]) -> List[str]:
+
+    #   if (!stateValue) {
+    #     return [[]];
+    #   }
+    if state_value is None:
+        return [[]]
+
+    #   if (isString(stateValue)) {
+    #     return [[stateValue]];
+    #   }
+    if isinstance(state_value, str):
+        return [[state_value]]
+
+    #   const result = flatten(
+    #     keys(stateValue).map((key) => {
+    #       const subStateValue = stateValue[key];
+
+    def map_function(key):
+        #   const subStateValue = stateValue[key];
+        sub_state_value = state_value[key]
+        #       if (
+        #         typeof subStateValue !== 'string' &&
+        #         (!subStateValue || !Object.keys(subStateValue).length)
+        #       ) {
+        #         return [[key]];
+        #       }
+        if not isinstance(sub_state_value, str) and (
+            sub_state_value is not None or not len(sub_state_value) > 0
+        ):
+            return [[key]]
+
+        #       return toStatePaths(stateValue[key]).map((subPath) => {
+        #         return [key].concat(subPath);
+        #       });
+        return [[key].extend(sub_path) for sub_path in to_state_paths(state_value[key])]
+        #     })
+        #   );
+
+    result = flatten([map_function(key) for key in state_value.keys()])
+
+    #   return result;
+    return result
+    # }
 
 
 def is_state_like(state: any) -> bool:
