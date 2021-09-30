@@ -2,6 +2,9 @@ from __future__ import (
     annotations,
 )  #  PEP 563:__future__.annotations will become the default in Python 3.11
 from typing import TYPE_CHECKING, Dict, List, Union
+import logging
+
+logger = logging.getLogger(__name__)
 
 # from xstate import transition
 
@@ -71,7 +74,7 @@ class Machine:
         configuration = get_configuration_from_state(  # TODO DEBUG FROM HERE
             from_node=self.root, state=state, partial_configuration=set()
         )
-        # TODO WIP 21W39 implement transitions
+
         possible_transitions = list(configuration)[0].transitions
         (configuration, _actions, transitons) = main_event_loop(
             configuration, Event(event)
@@ -79,7 +82,7 @@ class Machine:
 
         actions, warnings = self._get_actions(_actions)
         for w in warnings:
-            print(w)
+            logger.warning(w)
 
         return State(
             configuration=configuration,
