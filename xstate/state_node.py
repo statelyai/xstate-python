@@ -80,10 +80,7 @@ class StateNode:
     on: Dict[str, List[Transition]]
     machine: "Machine"
     parent: Optional["StateNode"]
-    # TODO: verify this change of initial
-    # initial: Optional[Transition]
     initial: Union[StateValue, str]
-
     entry: List[Action]
     exit: List[Action]
     donedata: Optional[Dict]
@@ -476,20 +473,19 @@ class StateNode:
         #     _target: Array<string | StateNode<TContext, any, TEvent>> | undefined
         #   ): Array<StateNode<TContext, any, TEvent>> | undefined {
 
-    # TODO validate this removal of initial see __init__
-    # @property
-    # def initial(self):
-    #     initial_key = self.config.get("initial")
+    @property
+    def initial_transition(self):
+        initial_key = self.config.get("initial")
 
-    #     if not initial_key:
-    #         if self.type == "compound":
-    #             return Transition(
-    #                 next(iter(self.states.values())), source=self, event=None, order=-1
-    #             )
-    #     else:
-    #         return Transition(
-    #             self.states.get(initial_key), source=self, event=None, order=-1
-    #         )
+        if not initial_key:
+            if self.type == "compound":
+                return Transition(
+                    next(iter(self.states.values())), source=self, event=None, order=-1
+                )
+        else:
+            return Transition(
+                self.states.get(initial_key), source=self, event=None, order=-1
+            )
 
     #   public get initialStateNodes(): Array<StateNode<TContext, any, TEvent, any>> {
     @property

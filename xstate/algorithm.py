@@ -139,7 +139,7 @@ def add_descendent_states_to_enter(  # noqa C901 too complex. TODO: simplify fun
         states_to_enter.add(state)
         if is_compound_state(state):
             states_for_default_entry.add(state)
-            for s in state.initial.target:
+            for s in state.initial_transition.target:
                 add_descendent_states_to_enter(
                     s,
                     states_to_enter=states_to_enter,
@@ -147,7 +147,7 @@ def add_descendent_states_to_enter(  # noqa C901 too complex. TODO: simplify fun
                     default_history_content=default_history_content,
                     history_value=history_value,
                 )
-            for s in state.initial.target:
+            for s in state.initial_transition.target:
                 add_ancestor_states_to_enter(
                     s,
                     ancestor=s.parent,

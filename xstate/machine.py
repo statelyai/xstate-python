@@ -141,7 +141,7 @@ class Machine:
     @property
     def initial_state(self) -> State:
         (configuration, _actions, internal_queue, transitions) = enter_states(
-            [self.root.initial],
+            enabled_transitions=[self.root.initial_transition],
             configuration=set(),
             states_to_invoke=set(),
             history_value={},
