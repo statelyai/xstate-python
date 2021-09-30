@@ -11,8 +11,11 @@ The following tests exist
     * xxx - the ....
 """
 # from xstate.algorithm import is_parallel_state
+from webbrowser import get
 from xstate.machine import Machine
-from xstate.state import State
+from xstate.algorithm import get_configuration_from_js
+
+# from xstate.state import State
 # import {
 #   Machine,
 #   State,
@@ -24,13 +27,9 @@ from xstate.state import State
 # import { initEvent, assign } from '../src/actions';
 # import { toSCXMLEvent } from '../src/utils';
 
-#TODO REMOVE after main debug effort
-import sys
-import importlib
-# importlib.reload(sys.modules['xstate.state'])
 
-
-
+import pytest
+from .utils_for_tests import JSstyleTest, pytest_func_docstring_summary
 
 machine_xstate_js_config = """{
   type: 'parallel',
@@ -100,8 +99,6 @@ machine_xstate_js_config = """{
 machine = Machine(machine_xstate_js_config)
 
 
-
-
 light_machine_xstate_js_config = """{
   id: 'light',
   initial: 'green',
@@ -126,11 +123,8 @@ light_machine_xstate_js_config = """{
     }
   }
 }"""
-# light_machine_xstate_python_config=machine_config_translate(light_machine_xstate_js_config)
-# light_machine_xstate_python_config['id']="test_statesin_light"
+
 light_machine = Machine(light_machine_xstate_js_config)
-
-
 
 
 # type Events =
@@ -150,43 +144,73 @@ light_machine = Machine(light_machine_xstate_js_config)
 #   | { type: 'TO_TWO_MAYBE' }
 #   | { type: 'TO_FINAL' };
 
-class TestStatein_transition:
-    """  describe('transition "in" check', () => {
-    """
 
-    def test_set_one(self):
-        """
-          'should transition if string state path matches current state value'
+class TestStateIn_transition:
+    """describe('transition "in" check', () => {"""
 
-          
-          #   it('should transition if string state path matches current state value', () => {
-          #     expect(
-          #       machine.transition(
-          #         {
-          #           a: 'a1',
-          #           b: {
-          #             b2: {
-          #               foo: 'foo2',
-          #               bar: 'bar1'
-          #             }
-          #           }
-          #         },
-          #         'EVENT1'
-          #       ).value
-          #     ).toEqual({
-          #       a: 'a2',
-          #       b: {
-          #         b2: {
-          #           foo: 'foo2',
-          #           bar: 'bar1'
-          #         }
-          #       }
-          #     });
-          #   });
-        """
-        new_state =  machine.transition("""
+    def test_transition_if_string_state_path_matches_current_state_value(self, request):
+        """should transition if string state path matches current state value"""
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            machine.transition(
+                get_configuration_from_js(
+                    """
+                    {
+                        a: 'a1',
+                        b: {
+                          b2: {
+                            foo: 'foo2',
+                            bar: 'bar1'
+                          }
+                        }
+                      }
+                """
+                ),
+                "EVENT1",
+            ).value
+        ).toEqual(
+            get_configuration_from_js(
+                """
+                {
+                  a: 'a2',
+                  b: {
+                    b2: {
+                      foo: 'foo2',
+                      bar: 'bar1'
+                    }
+                  }
+                }
+              """
+            )
+        )
+
+    def test_should_transition_if_state_node_id_matches_current_state_value(
+        self, request
+    ):
+        """should transition if state node ID matches current state value"""
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            machine.transition(
+                get_configuration_from_js(
+                    """
+                        {
+                          a: 'a1',
+                          b: {
+                            b2: {
+                              foo: 'foo2',
+                              bar: 'bar1'
+                            }
+                          }
+                        }
+                      """
+                ),
+                "EVENT3",
+            ).value
+        ).toEqual(
+            get_configuration_from_js(
+                """      
             {
-              a: 'a1',
+              a: 'a2',
               b: {
                 b2: {
                   foo: 'foo2',
@@ -194,73 +218,43 @@ class TestStatein_transition:
                 }
               }
             }
-          """,'EVENT1')
+        """
+            )
+        )
 
-        assert True, 'should transition if string state path matches current state value'
+    #   it('should not transition if string state path does not match current state value', () => {
+    def test_should_not_transition_if_string_state_path_does_not_match_current_state_value(
+        self, request
+    ):
+        """should not transition if string state path does not match current state value"""
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            machine.transition(
+                get_configuration_from_js(
+                    """
+                    { 
+                      a: 'a1',
+                      b: 'b1' 
+                    }
+                """
+                ),
+                "EVENT1",
+            ).value
+        ).toEqual(
+            get_configuration_from_js(
+                """
+                  {
+                      a: 'a1',
+                      b: 'b1'
+                  }
+                """
+            )
+        )
 
 
-
- 
-
-
-# describe('transition "in" check', () => {
-#   it('should transition if string state path matches current state value', () => {
-#     expect(
-#       machine.transition(
-#         {
-#           a: 'a1',
-#           b: {
-#             b2: {
-#               foo: 'foo2',
-#               bar: 'bar1'
-#             }
-#           }
-#         },
-#         'EVENT1'
-#       ).value
-#     ).toEqual({
-#       a: 'a2',
-#       b: {
-#         b2: {
-#           foo: 'foo2',
-#           bar: 'bar1'
-#         }
-#       }
-#     });
-#   });
-
-#   it('should transition if state node ID matches current state value', () => {
-#     expect(
-#       machine.transition(
-#         {
-#           a: 'a1',
-#           b: {
-#             b2: {
-#               foo: 'foo2',
-#               bar: 'bar1'
-#             }
-#           }
-#         },
-#         'EVENT3'
-#       ).value
-#     ).toEqual({
-#       a: 'a2',
-#       b: {
-#         b2: {
-#           foo: 'foo2',
-#           bar: 'bar1'
-#         }
-#       }
-#     });
-#   });
-
-#   it('should not transition if string state path does not match current state value', () => {
-#     expect(machine.transition({ a: 'a1', b: 'b1' }, 'EVENT1').value).toEqual({
-#       a: 'a1',
-#       b: 'b1'
-#     });
-#   });
-
+###################################################
+# NOT IMPLEMENTED YET
+####################################################
 #   it('should not transition if state value matches current state value', () => {
 #     expect(
 #       machine.transition(
