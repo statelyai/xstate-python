@@ -1,4 +1,4 @@
-"""Tests for  algorithims
+"""Tests for  algorithms
 
 These tests use either machines coded as python `dict` 
 or accept strings representing xstate javascript/typescript which are
@@ -17,7 +17,7 @@ from xstate.algorithm import is_parallel_state, to_state_path, get_configuration
 from xstate.machine import Machine
 
 
-class TestAlgorithims:
+class TestAlgorithms:
 
     test_machine = Machine(
         """    {

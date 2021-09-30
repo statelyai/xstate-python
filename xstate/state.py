@@ -67,7 +67,7 @@ class State:
         )
 
     def __str__(self):
-        # configuration is a set, we need an algorithim to walk the set and produce an ordered list
+        # configuration is a set, we need an algorithm to walk the set and produce an ordered list
         # Why:  [state.id for state in self.configuration]    # produces unsorted with machine prefix `['test_states.two.deep', 'test_states.two', 'test_states.two.deep.foo']`
 
         # build dict of child:parent
