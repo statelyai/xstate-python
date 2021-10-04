@@ -20,16 +20,20 @@ from xstate.transition import Transition
 from xstate.algorithm import (
     to_transition_config_array,
     to_state_path,
+    path_to_state_value,
     flatten,
+    map_values,
     normalize_target,
     to_array_strict,
     to_state_value,
     to_state_paths,
     is_machine,
     is_leaf_node,
+    is_in_final_state,
     to_array,
     to_guard,
     done,
+    get_configuration,
 )
 
 from xstate.action import done_invoke, to_action_objects
@@ -374,6 +378,159 @@ class StateNode:
 
         machine._register(self)
 
+    #   public resolve(stateValue: StateValue): StateValue {
+    def resolve(self, state_value: StateValue) -> StateValue:
+        """Resolves a partial state value with its full representation in this machine.
+
+        Args:
+            state_value (StateValue): The partial state value to resolve.
+
+        Raises:
+            Exception: [description]
+            Exception: [description]
+            ValueError: [description]
+            Exception: [description]
+            Exception: [description]
+            Exception: [description]
+            Exception: [description]
+
+        Returns:
+            StateValue: Full representation of a state in this machine.
+        """
+        #     if (!stateValue) {
+        #       return this.initialStateValue || EMPTY_OBJECT; // TODO: type-specific properties
+        #     }
+
+        if state_value is None:
+            return (
+                self.initial_state_value or EMPTY_OBJECT
+            )  # // TODO: type-specific properties
+
+        #     switch (this.type) {
+        #       case 'parallel':
+        if self.type == "parallel":
+            # return map_values(
+            #           this.initialStateValue as Record<string, StateValue>,
+            # self.initial_state_value,
+            #           (subStateValue, subStateKey) => {
+            #             return subStateValue
+            #               ? this.getStateNode(subStateKey).resolve(
+            #                   stateValue[subStateKey] || subStateValue
+            #                 )
+            #               : EMPTY_OBJECT;
+            #           }
+            #         );
+
+            def func1(sub_state_value, sub_state_key):
+                return (
+                    self.get_state_node(sub_state_key).resolve(
+                        state_value.get(sub_state_key, sub_state_value)
+                    )
+                    if (sub_state_value is not None)
+                    else EMPTY_OBJECT
+                )
+
+            return map_values(self.initial_state_value, func1)
+
+        #       case 'compound':
+        elif self.type == "compound":
+            #         if (isString(stateValue)) {
+            #           const subStateNode = this.getStateNode(stateValue);
+
+            if isinstance(state_value, str):
+                sub_state_node = self.get_state_node(state_value)
+                #           if (
+                #             subStateNode.type === 'parallel' ||
+                #             subStateNode.type === 'compound'
+                #           ) {
+                #             return { [stateValue]: subStateNode.initialStateValue! };
+                #           }
+
+                #           return stateValue;
+                #         }
+
+                if (
+                    sub_state_node.type == "parallel"
+                    or sub_state_node.type == "compound"
+                ):
+                    return {[state_value]: sub_state_node.initial_state_value.copy()}
+
+                return state_value
+
+            #         if (!keys(stateValue).length) {
+            #           return this.initialStateValue || {};
+            #         }
+
+            if len(state_value.keys()) == 0:
+                return self.initial_state_value if self.initial_state_value else {}
+
+            #         return mapValues(stateValue, (subStateValue, subStateKey) => {
+            #           return subStateValue
+            #             ? this.getStateNode(subStateKey as string).resolve(subStateValue)
+            #             : EMPTY_OBJECT;
+            #         });
+            def func(*args):
+                sub_state_value, sub_state_key = args[0:2]
+                return (
+                    self.get_state_node(sub_state_key).resolve(sub_state_value)
+                    if (sub_state_value is not None)
+                    else EMPTY_OBJECT
+                )
+
+            return map_values(state_value, func)
+
+        #       default:
+        #         return stateValue || EMPTY_OBJECT;
+        else:
+            return state_value if state_value is not None else EMPTY_OBJECT
+        #     }
+        #   }
+
+        #     }
+
+        #   }
+
+        #   public resolveState(
+        #     state: State<TContext, TEvent, any, any>
+        #   ): State<TContext, TEvent, TStateSchema, TTypestate> {
+
+    def resolve_state(self, state: State) -> State:
+        """Resolves the given `state` to a new `State` instance relative to this machine.
+
+            This ensures that `.events` and `.nextEvents` represent the correct values.
+
+        Args:
+            state (State): The state to resolve
+
+        Returns:
+            State: a new `State` instance relative to this machine
+        """
+
+        #     const configuration = Array.from(
+        #       getConfiguration([], this.getStateNodes(state.value))
+        #     );
+        # TODO: check this , is Array.from() required
+        configuration = list(get_configuration([], self.get_state_nodes(state.value)))
+
+        #     return new State({
+        #       ...state,
+        #       value: this.resolve(state.value),
+        #       configuration,
+        #       done: isInFinalState(configuration, this)
+        #     });
+        #   }
+        return State(
+            **{
+                **vars(state),
+                **{
+                    "value": self.resolve(state.value),
+                    "configuration": configuration,
+                    "done": is_in_final_state(configuration, self),
+                },
+            }
+        )
+        #   }
+
     #   StateNode.prototype.getStateNodeById = function (stateId) {
     def get_state_node_by_id(self, state_id: str):
         """Returns the state node with the given `state_id`, or raises exception.
@@ -469,9 +626,30 @@ class StateNode:
             #     return currentStateNode;
             return current_state_node
 
-        #   private resolveTarget(
-        #     _target: Array<string | StateNode<TContext, any, TEvent>> | undefined
-        #   ): Array<StateNode<TContext, any, TEvent>> | undefined {
+    #   private getResolvedPath(stateIdentifier: string): string[] {
+    def _get_resolved_path(self, state_identifier: str) -> List[str]:
+        #     if (isStateId(stateIdentifier)) {
+        if is_state_id(state_identifier):
+            #       const stateNode = this.machine.idMap[
+            #         stateIdentifier.slice(STATE_IDENTIFIER.length)
+            #       ];
+            state_node = self.machine.id_map[state_identifier[len(STATE_IDENTIFIER) :]]
+
+            if state_node is None:
+                #         throw new Error(`Unable to find state node '${stateIdentifier}'`);
+                msg = f"Unable to find state node '{state_identifier}'"
+                logger.error(msg)
+                raise Exception(msg)
+            #       return stateNode.path;
+            return state_node.path
+        #     return toStatePath(stateIdentifier, this.delimiter);
+        return to_state_path(state_identifier, self.delimiter)
+
+    #   }
+
+    #   private resolveTarget(
+    #     _target: Array<string | StateNode<TContext, any, TEvent>> | undefined
+    #   ): Array<StateNode<TContext, any, TEvent>> | undefined {
 
     @property
     def initial_transition(self):

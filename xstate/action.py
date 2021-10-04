@@ -20,6 +20,11 @@ from xstate.types import (
     ActionObject,
 )
 
+from xstate.algorithm import (
+    to_scxml_event,
+)
+import xstate.action_types as actionTypes
+
 
 def not_implemented():
     logger.warning("Action function: not implemented")
@@ -29,6 +34,8 @@ def not_implemented():
 class DoneEvent(Event):
     pass
 
+
+init_event = to_scxml_event({"type": actionTypes.init})
 
 # /**
 #  * Returns an event that represents that an invoked service has terminated.

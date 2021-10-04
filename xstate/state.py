@@ -1,17 +1,26 @@
 from __future__ import (
     annotations,
 )  #  PEP 563:__future__.annotations will become the default in Python 3.11
+import logging
+
+logger = logging.getLogger(__name__)
+
 from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
 from xstate.transition import Transition
 
 # from xstate.algorithm import get_state_value
 import xstate.algorithm as algorithm
+from xstate.action import init_event
 from contextvars import Context
 from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from xstate.action import Action
     from xstate.state_node import StateNode
+    from xstate.types import (
+        StateValue,
+        SCXML,
+    )
 
     # TODO WIP (history) -
     # from xstate.???? import History
@@ -36,11 +45,23 @@ class State:
         configuration: Set["StateNode"],
         context: Dict[str, Any],
         actions: List["Action"] = [],
-        **kwargs
+        **kwargs,
     ):
-        root = next(iter(configuration)).machine.root
+        # root = next(iter(configuration)).machine.root
         self.configuration = configuration
-        self.value = algorithm.get_state_value(root, configuration)
+        # TODO TD handle no value but configuarion = []
+        if kwargs.get("value", None) is None:
+            if self.configuration == []:
+                msg = f"A valid configuration must exist to facilitate state: obtaining state as no value given"
+                logger.error(msg)
+                raise Exception(msg)
+            else:
+                self.value = algorithm.get_state_value(
+                    next(iter(configuration)).machine.root, configuration
+                )
+
+        else:
+            self.value = kwargs.get("value", None)
         self.context = context
         self.actions = actions
         self.history_value = kwargs.get("history_value", None)
@@ -119,6 +140,107 @@ class State:
         return repr(states_ordered)
 
         # return f"""{self.__class__.__name__}(configuration={'<WIP a Set["StateNode"]>'}, context={self.context} , actions={self.actions})"""
+
+    #   public static from<TC, TE extends EventObject = EventObject>(
+    #     stateValue: State<TC, TE, any, any> | StateValue,
+    #     context?: TC | undefined
+    #   ): State<TC, TE, any, any> {
+    def _from(state_value: Union[State, StateValue], context: Any) -> State:
+        """Creates a new State instance for the given `stateValue` and `context`.
+
+        Args:
+            state_value (Union[State, StateValue]): [description]
+            context (Any): [description]
+
+        Returns:
+            State: [description]
+        """
+        # /**
+        #    * Creates a new State instance for the given `stateValue` and `context`.
+        #    * @param stateValue
+        #    * @param context
+        #    */
+
+        #     if (stateValue instanceof State) {
+        if isinstance(state_value, State):
+            #       if (stateValue.context !== context) {
+            if state_value.context != context:
+                #         return new State<TC, TE>({
+                #           value: stateValue.value,
+                #           context: context as TC,
+                #           _event: stateValue._event,
+                #           _sessionid: null,
+                #           historyValue: stateValue.historyValue,
+                #           history: stateValue.history,
+                #           actions: [],
+                #           activities: stateValue.activities,
+                #           meta: {},
+                #           events: [],
+                #           configuration: [], // TODO: fix,
+                #           transitions: [],
+                #           children: {}
+                #         });
+                #       }
+                return State(
+                    **{
+                        "value": state_value.value,
+                        "context": context,
+                        "_event": state_value._event,
+                        "_sessionid": None,
+                        "historyValue": state_value.history_value,
+                        "history": state_value.history,
+                        "actions": [],
+                        "activities": state_value.activities,
+                        "meta": {},
+                        "events": [],
+                        "configuration": [],  # TODO: fix, ( oriiginal comment in JS)
+                        "transitions": [],
+                        "children": {},
+                    }
+                )
+            #       }
+
+            #       return stateValue;
+            return state_value
+        #     }
+
+        #     const _event = initEvent as SCXML.Event<TE>;
+        # TODO capture SCXML.Event
+        _event: SCXML.Event = init_event
+
+        #     return new State<TC, TE>({
+        #       value: stateValue,
+        #       context: context as TC,
+        #       _event,
+        #       _sessionid: null,
+        #       historyValue: undefined,
+        #       history: undefined,
+        #       actions: [],
+        #       activities: undefined,
+        #       meta: undefined,
+        #       events: [],
+        #       configuration: [],
+        #       transitions: [],
+        #       children: {}
+        return State(
+            **{
+                "value": state_value,
+                "context": context,
+                "_event": None,
+                "_sessionid": None,
+                "historyValue": None,
+                "history": None,
+                "actions": [],
+                "activities": None,
+                "meta": None,
+                "events": [],
+                "configuration": [],
+                "transitions": [],
+                "children": {},
+            }
+        )
+
+    #   }
 
 
 # StateType = Union[str, State]

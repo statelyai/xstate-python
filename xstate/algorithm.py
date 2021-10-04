@@ -44,6 +44,7 @@ if TYPE_CHECKING:
         StateValue,
         Configuration,
         AdjList,
+        SCXML
     )
     from xstate.action import Action
     from xstate.transition import Transition
@@ -303,7 +304,7 @@ def get_child_states(state_node: StateNode) -> List[StateNode]:
     return [state_node.states.get(key) for key in state_node.states.keys()]
 
 
-def is_in_final_state(state: StateNode, configuration: Set[StateNode]) -> bool:
+def is_in_final_state(configuration: Set[StateNode],state: StateNode, ) -> bool:
     if is_compound_state(state):
         return any(
             [
@@ -312,7 +313,7 @@ def is_in_final_state(state: StateNode, configuration: Set[StateNode]) -> bool:
             ]
         )
     elif is_parallel_state(state):
-        return all(is_in_final_state(s, configuration) for s in get_child_states(state))
+        return all(is_in_final_state(configuration,s) for s in get_child_states(state))
     else:
         return False
 
@@ -401,7 +402,7 @@ def enter_states(
 
             if grandparent and is_parallel_state(grandparent):
                 if all(
-                    is_in_final_state(parent_state, configuration)
+                    is_in_final_state( configuration, parent_state)
                     for parent_state in get_child_states(grandparent)
                 ):
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
@@ -997,28 +998,18 @@ def path_to_state_value(state_path: List[str]) -> StateValue:
     marker = value
 
     #   for (let i = 0; i < statePath.length - 1; i++) {
-    #     if (i === statePath.length - 2) {
-    #       marker[statePath[i]] = statePath[i + 1];
-    #     } else {
-    #       marker[statePath[i]] = {};
-    #       marker = marker[statePath[i]];
-    #     }
-    #   }
-
-    # TODO: WIP -what does a path look like
-    logger.warning("path_to_state_value: not fully implemented yet")
-    # for (let i = 0; i < statePath.length - 1; i++) {
-    # if (i === statePath.length - 2) {
-    #     marker[statePath[i]] = statePath[i + 1];
-    # } else {
-    #     marker[statePath[i]] = {};
-    #     marker = marker[statePath[i]];
-    # }
-    # }
-
-    #   return value;
+    for i, element in enumerate(state_path[:-1]):
+        #     if (i === statePath.length - 2) {
+        if i == len(state_path) - 2:
+            #       marker[statePath[i]] = statePath[i + 1];
+            marker[element] = state_path[i + 1]
+        #     } else {
+        else:
+            #       marker[statePath[i]] = {};
+            marker[element] = {}
+            #       marker = marker[statePath[i]];
+            marker = marker[element]
     return value
-    # }
 
 
 def to_state_value(
@@ -1120,6 +1111,63 @@ def to_state_paths(state_value: Union[StateValue, None]) -> List[str]:
     # }
 
 
+# export function toEventObject<TEvent extends EventObject>(
+#   event: Event<TEvent>,
+#   payload?: EventData
+#   // id?: TEvent['type']
+# ): TEvent {
+def to_event_object(
+     event: Event,
+    **kwargs
+)->Event:
+
+#   if (isString(event) || typeof event === 'number') {
+#     return { type: event, ...payload } as TEvent;
+#   }
+
+    if isinstance(event,str) or isinstance(event, int ):
+        return { "type": event, **kwargs}
+#   }
+
+#   return event;
+    return event
+# }
+
+# export function toSCXMLEvent<TEvent extends EventObject>(
+#   event: Event<TEvent> | SCXML.Event<TEvent>,
+#   scxmlEvent?: Partial<SCXML.Event<TEvent>>
+# ): SCXML.Event<TEvent> {
+def to_scxml_event(
+  event: Event,
+)->SCXML.Event:
+
+#   if (!isString(event) && '$$type' in event && event.$$type === 'scxml') {
+#     return event as SCXML.Event<TEvent>;
+#   }
+  if not isinstance(event,str) and '__type' in event and event.__type == 'scxml':
+    return event
+  
+
+#   const eventObject = toEventObject(event as Event<TEvent>);
+  event_object = to_event_object(event)
+
+#   return {
+#     name: eventObject.type,
+#     data: eventObject,
+#     $$type: 'scxml',
+#     type: 'external',
+#     ...scxmlEvent
+#   };
+  return {
+    "name": event_object['type'].value[0],
+    "data": event_object,
+    "__type": 'scxml',
+    "_type": 'external',
+    # ...scxmlEvent
+  }
+
+# }
+
 def is_state_like(state: any) -> bool:
     return (
         isinstance(state, object)
@@ -1197,9 +1245,9 @@ def get_value_from_adj(state_node: StateNode, adj_list: Dict[str, Set[StateNode]
 
 def map_values(collection: Dict[str, Any], iteratee: Callable):
     result = {}
-    collectionKeys = collection.keys()
+    collection_keys = collection.keys()
 
-    for i, key in enumerate(collection.keys()):
+    for i, key in enumerate(collection_keys):
         args = (collection[key], key, collection, i)
         result[key] = iteratee(*args)
 

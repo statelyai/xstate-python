@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 from xstate.algorithm import (
     enter_states,
+    path_to_state_value,
     get_configuration_from_state,
     macrostep,
     main_event_loop,
@@ -71,12 +72,48 @@ class Machine:
         # if isinstance(state,str):
         #     state = get_state(state)
         # BUG get_configuration_from_state should handle a str, state_value should be deterimed in the function
+
+        # if (state instanceof State_1.State) {
+        if isinstance(state, State):
+            #     currentState =
+            #         context === undefined
+            #             ? state
+            #             : this.resolveState(State_1.State.from(state, context));
+            # TODO implement context
+            # currentState = state if   context is None else  self.resolve_state(State.from(state, context)
+            currentState = state
+        # else {
+        else:
+            #     var resolvedStateValue = utils_1.isString(state)
+            #         ? this.resolve(utils_1.pathToStateValue(this.getResolvedPath(state)))
+            #         : this.resolve(state);
+            resolved_state_value = (
+                self.root.resolve(
+                    path_to_state_value(self.root._get_resolved_path(state))
+                )
+                if isinstance(state, str)
+                else self.resolve(state)
+            )
+
+            #     var resolvedContext = context !== null && context !== void 0 ? context : this.machine.context;
+            #     currentState = this.resolveState(State_1.State.from(resolvedStateValue, resolvedContext));
+
+            # TODO implement context
+            # resolved_context = context  if context is not None and  && context !== void 0 ? : this.machine.context;
+            currentState = self.root.resolve_state(
+                State._from(
+                    state_value=resolved_state_value,
+                    # TODO implement context
+                    context=None,  # resolvedContext
+                )
+            )
+
         configuration = get_configuration_from_state(  # TODO DEBUG FROM HERE
-            from_node=self.root, state=state, partial_configuration=set()
+            from_node=self.root, state=currentState, partial_configuration=set()
         )
 
         possible_transitions = list(configuration)[0].transitions
-        (configuration, _actions, transitons) = main_event_loop(
+        (configuration, _actions, transitions) = main_event_loop(
             configuration, Event(event)
         )
 
@@ -88,7 +125,7 @@ class Machine:
             configuration=configuration,
             context={},
             actions=actions,
-            transitions=transitons,
+            transitions=transitions,
         )
 
     def _get_actions(self, actions) -> List[lambda: None]:
