@@ -61,11 +61,22 @@ class JSstyleTest:
         pass
 
     def it(self, message):
+        self._definitions = None
         self.message = message
+
+        return self
+
+    def do(self, **kwargs):
+        self._definitions = kwargs
         return self
 
     def expect(self, operation):
         self.operation = operation
+        if isinstance(self.operation, str) and self._definitions is not None:
+            for d in self._definitions.keys():
+                if str(d) in operation:
+                    self.operation = eval(operation, {}, self._definitions)
+
         return self
 
     def toEqual(self, test):
