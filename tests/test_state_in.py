@@ -251,80 +251,143 @@ class TestStateIn_transition:
             )
         )
 
+    #   it('should not transition if state value matches current state value', () => {
+    def test_should_not_transition_if_state_value_matches_current_state_value(
+        self, request
+    ):
+        """should not transition if state value matches current state value"""
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            machine.transition(
+                get_configuration_from_js(
+                    """    
+                        {
+                          a: 'a1',
+                          b: {
+                            b2: {
+                              foo: 'foo2',
+                              bar: 'bar1'
+                            }
+                          }
+                        }
+                        
+                    """
+                ),
+                "EVENT2",
+            ).value
+        ).toEqual(
+            get_configuration_from_js(
+                """      
+                      {
+                        a: 'a2',
+                        b: {
+                          b2: {
+                            foo: 'foo2',
+                            bar: 'bar1'
+                          }
+                        }
+                      }
+                      
+                """
+            )
+        )
 
-###################################################
-# NOT IMPLEMENTED YET
-####################################################
-#   it('should not transition if state value matches current state value', () => {
-#     expect(
-#       machine.transition(
-#         {
-#           a: 'a1',
-#           b: {
-#             b2: {
-#               foo: 'foo2',
-#               bar: 'bar1'
-#             }
-#           }
-#         },
-#         'EVENT2'
-#       ).value
-#     ).toEqual({
-#       a: 'a2',
-#       b: {
-#         b2: {
-#           foo: 'foo2',
-#           bar: 'bar1'
-#         }
-#       }
-#     });
-#   });
+    #   it('matching should be relative to grandparent (match)', () => {
+    def test_matching_should_be_relative_to_grandparent_match(self, request):
+        """matching should be relative to grandparent (match)"""
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            machine.transition(
+                get_configuration_from_js(
+                    """
+                        { 
+                          a: 'a1', 
+                          b: { 
+                            b2: 
+                             {
+                                foo: 'foo1', 
+                                bar: 'bar1'
+                              } 
+                              } 
+                        }
+                              
+                      """
+                ),
+                "EVENT_DEEP",
+            ).value
+        ).toEqual(
+            get_configuration_from_js(
+                """      
+          {
+            a: 'a1',
+            b: {
+              b2: {
+                foo: 'foo2',
+                bar: 'bar1'
+              }
+            }
+          }
+            
+        """
+            )
+        )
 
-#   it('matching should be relative to grandparent (match)', () => {
-#     expect(
-#       machine.transition(
-#         { a: 'a1', b: { b2: { foo: 'foo1', bar: 'bar1' } } },
-#         'EVENT_DEEP'
-#       ).value
-#     ).toEqual({
-#       a: 'a1',
-#       b: {
-#         b2: {
-#           foo: 'foo2',
-#           bar: 'bar1'
-#         }
-#       }
-#     });
-#   });
+    #  it('matching should be relative to grandparent (no match)', () => {
+    def test_matching_should_be_relative_to_grandparent_no_match(self, request):
+        """matching should be relative to grandparent (no match)
+        difference being b2.bar is bar2
+        """
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            machine.transition(
+                get_configuration_from_js(
+                    """
+                      { 
+                        a: 'a1',
+                        b: {
+                            b2: 
+                            {
+                              foo: 'foo1',
+                              bar: 'bar2' 
+                            } 
+                            }
+                      }
+                    """
+                ),
+                "EVENT_DEEP",
+            ).value
+        ).toEqual(
+            get_configuration_from_js(
+                """      
+            {
+              a: 'a1',
+              b: {
+                b2: {
+                  foo: 'foo1',
+                  bar: 'bar2'
+                }
+              }
+            }
+          """
+            )
+        )
 
-#   it('matching should be relative to grandparent (no match)', () => {
-#     expect(
-#       machine.transition(
-#         { a: 'a1', b: { b2: { foo: 'foo1', bar: 'bar2' } } },
-#         'EVENT_DEEP'
-#       ).value
-#     ).toEqual({
-#       a: 'a1',
-#       b: {
-#         b2: {
-#           foo: 'foo1',
-#           bar: 'bar2'
-#         }
-#       }
-#     });
-#   });
-
-#   it('should work to forbid events', () => {
-#     const walkState = lightMachine.transition('red.walk', 'TIMER');
-
-#     expect(walkState.value).toEqual({ red: 'walk' });
-
-#     const waitState = lightMachine.transition('red.wait', 'TIMER');
-
-#     expect(waitState.value).toEqual({ red: 'wait' });
-
-#     const stopState = lightMachine.transition('red.stop', 'TIMER');
-
-#     expect(stopState.value).toEqual('green');
-#   });
-# });
+    #   it('should work to forbid events', () => {
+    def test_should_work_to_forbid_events(self, request):
+        """should work to forbid events"""
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).do(
+            walkState=light_machine.transition("red.walk", "TIMER")
+        ).expect("walkState.value").toEqual({"red": "walk"}).do(
+            waitState=light_machine.transition("red.wait", "TIMER")
+        ).expect(
+            "waitState.value"
+        ).toEqual(
+            {"red": "wait"}
+        ).do(
+            stopState=light_machine.transition("red.stop", "TIMER")
+        ).expect(
+            "stopState.value"
+        ).toEqual(
+            "green"
+        )
