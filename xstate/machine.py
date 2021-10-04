@@ -82,6 +82,8 @@ class Machine:
             # TODO implement context
             # currentState = state if   context is None else  self.resolve_state(State.from(state, context)
             currentState = state
+        elif isinstance(state, dict):
+            currentState = state
         # else {
         else:
             #     var resolvedStateValue = utils_1.isString(state)
