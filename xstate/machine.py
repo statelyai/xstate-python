@@ -92,7 +92,7 @@ class Machine:
                     path_to_state_value(self.root._get_resolved_path(state))
                 )
                 if isinstance(state, str)
-                else self.resolve(state)
+                else self.root.resolve(state)
             )
 
             #     var resolvedContext = context !== null && context !== void 0 ? context : this.machine.context;
