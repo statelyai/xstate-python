@@ -227,10 +227,14 @@ class TestStateIn_transition:
         )
 
     #   it('should not transition if string state path does not match current state value', () => {
+    @pytest.mark.skip(
+        reason="Transition based on Orthogonal/Parallel or Hierachical relative states, not yet implemented"
+    )
     def test_should_not_transition_if_string_state_path_does_not_match_current_state_value(
         self, request
     ):
-        """should not transition if string state path does not match current state value"""
+        """should not transition if string state path does not match current state value
+        ie in the case of a parallel referenced state the transition should not happend"""
         test = JSstyleTest()
         test.it(pytest_func_docstring_summary(request)).expect(
             machine.transition(
