@@ -68,10 +68,6 @@ class Machine:
         self.actions = actions
 
     def transition(self, state: StateType, event: str):
-        # BUG state could be an `id` of type  `str` representing a state
-        # if isinstance(state,str):
-        #     state = get_state(state)
-        # BUG get_configuration_from_state should handle a str, state_value should be deterimed in the function
 
         # if (state instanceof State_1.State) {
         if isinstance(state, State):
@@ -114,7 +110,11 @@ class Machine:
             from_node=self.root, state=currentState, partial_configuration=set()
         )
 
-        possible_transitions = list(configuration)[0].transitions
+        possible_transitions = [
+            transition
+            for statenode in configuration
+            for transition in statenode.transitions
+        ]
         (configuration, _actions, transitions) = main_event_loop(
             configuration, Event(event)
         )
