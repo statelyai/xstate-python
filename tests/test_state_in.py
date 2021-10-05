@@ -1,5 +1,9 @@
 """Tests for  statesin
 
+These tests test transitions, some of the tests test the transition guard capabilities
+ie only transition if state is in a particular state `in State` 
+see https://xstate.js.org/docs/guides/guards.html#in-state-guards
+
 Based on : xstate/packages/core/test/statein.test.ts
 
 These tests use either machines coded as python `dict` 
@@ -333,9 +337,12 @@ class TestStateIn_transition:
         )
 
     #  it('matching should be relative to grandparent (no match)', () => {
+    @pytest.mark.skip(reason="Transition Guards, not yet implemented")
     def test_matching_should_be_relative_to_grandparent_no_match(self, request):
         """matching should be relative to grandparent (no match)
-        difference being b2.bar is bar2
+            ie. transitioning a state dependent on a relative state
+                only transition `foo.foo2` if a relative has current state as `bar.bar1`
+        see https://xstate.js.org/docs/guides/guards.html#in-state-guards
         """
         test = JSstyleTest()
         test.it(pytest_func_docstring_summary(request)).expect(
@@ -373,8 +380,14 @@ class TestStateIn_transition:
         )
 
     #   it('should work to forbid events', () => {
+    @pytest.mark.skip(reason="Transition Guards, not yet implemented")
     def test_should_work_to_forbid_events(self, request):
-        """should work to forbid events"""
+        """should work to forbid events
+          ie. transitioning a state dependent on being in a particular state
+                only transition to `#light.green` if `#light.red` substate is `red.stop`
+        see https://xstate.js.org/docs/guides/guards.html#in-state-guards
+
+        """
         test = JSstyleTest()
         test.it(pytest_func_docstring_summary(request)).do(
             walkState=light_machine.transition("red.walk", "TIMER")
