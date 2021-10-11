@@ -84,9 +84,13 @@ class EventObject:
 
     """
 
-    type: str
+    type: str=""
 
-
+    def update(self, new):
+      for key, value in new.items():
+          if hasattr(self, key):
+            setattr(self, key, value)
+      return self
 """
 export interface AnyEventObject extends EventObject {
   [key: string]: any;
@@ -276,8 +280,8 @@ export type ExtractStateValue<
 # }
 @dataclass
 class HistoryValue(EventObject):
-    states: Record  # <string, HistoryValue | undefined>;
-    current: Union[StateValue, None]
+    states: Union[Record,HistoryValue,None] = None # <string, HistoryValue | undefined>;
+    current: Union[StateValue, None] = None
 
 
 """
@@ -338,12 +342,12 @@ export interface TransitionConfig<TContext, TEvent extends EventObject> {
 
 @dataclass
 class TransitionConfig(EventObject):
-    cond: Condition
-    actions: Actions
-    _in: StateValue
-    internal: bool
-    target: TransitionTarget
-    meta: Record
+    cond: Condition = None
+    actions: Actions = None
+    _in: StateValue = None
+    internal: bool = None
+    target: TransitionTarget = None
+    meta: Record = None
 
 
 """
@@ -1311,7 +1315,7 @@ export interface ChooseAction<TContext, TEvent extends EventObject>
 
 @dataclass
 class TransitionDefinition(TransitionConfig):
-    source: str
+    source: str=None
 
 
 """

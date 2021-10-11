@@ -40,6 +40,7 @@ class Transition:
         cond: Optional[CondFunction] = None,
     ):
         if (
+            # Test for possible snippet of JS being the configuration
             isinstance(config, str)
             and config.lstrip()[0] == "{"
             and config.rstrip()[-1] == "}"
@@ -66,7 +67,10 @@ class Transition:
     @property
     def target(self) -> List["StateNode"]:
         if isinstance(self.config, str):
-            return [self.source._get_relative(self.config)]
+            return self.source.parent.get_from_relative_path(
+                algorithm.to_state_path(self.config)
+            )
+            # return [self.source._get_relative(self.config)]
         elif isinstance(self.config, dict):
             if isinstance(self.config["target"], str):
                 return [self.source._get_relative(self.config["target"])]

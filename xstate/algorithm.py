@@ -44,7 +44,8 @@ if TYPE_CHECKING:
         StateValue,
         Configuration,
         AdjList,
-        SCXML
+        SCXML,
+        # HistoryValue
     )
     from xstate.action import Action
     from xstate.transition import Transition
@@ -52,9 +53,14 @@ if TYPE_CHECKING:
     from xstate.state import StateType
     from xstate.event import Event
 
-    HistoryValue = Dict[str, Set[StateNode]]
 
     from xstate.state import State
+
+    # HistoryValue = Dict[str, Set[StateNode]]
+from xstate.types import (
+        HistoryValue
+    )
+
 
 from xstate.event import Event
 from xstate.action_types import ActionTypes
@@ -362,6 +368,7 @@ def enter_states(
     actions: List[Action],
     internal_queue: List[Event],
     transitions: List[Transition],
+    current_state:State
 ) -> Tuple[Set[StateNode], List[Action], List[Event]]:
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
@@ -408,6 +415,24 @@ def enter_states(
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
                     # transitions.add("TRANSITION") #TODO WIP 21W39
 
+        #  const historyValue = currentState
+        #   ? currentState.historyValue
+
+        #     ? currentState.historyValue
+
+        #     : stateTransition.source
+        #     ? (this.machine.historyValue(currentState.value) as HistoryValue)
+        #     : undefined
+
+        #   : undefined;      
+
+    hv = s._history_value() if s._history_value() else (
+                    s.machine.root._history_value(current_state.value) if list(enabled_transitions)[0].source else (
+                        None if s else None))
+    #TODO: clean this up, use update
+    history_value.update(hv.__dict__)
+    # history_value.current = hv.current
+    # history_value.states = hv.states
     return (configuration, actions, internal_queue, transitions)
 
 
@@ -545,10 +570,11 @@ def remove_conflicting_transitions(
 
 
 def main_event_loop(
-    configuration: Set[StateNode], event: Event
+    configuration: Set[StateNode], event: Event,
+    current_state:State
 ) -> Tuple[Set[StateNode], List[Action]]:
     states_to_invoke: Set[StateNode] = set()
-    history_value = {}
+    history_value = HistoryValue()
     transitions = set()
     enabled_transitions = select_transitions(event=event, configuration=configuration)
     transitions = transitions.union(enabled_transitions)
@@ -558,6 +584,7 @@ def main_event_loop(
         states_to_invoke=states_to_invoke,
         history_value=history_value,
         transitions=transitions,
+        current_state=current_state
     )
 
     (configuration, actions, transitions) = macrostep(
@@ -567,7 +594,7 @@ def main_event_loop(
         transitions=transitions,
     )
 
-    return (configuration, actions, transitions)
+    return (configuration, actions, transitions,history_value)
 
 
 def macrostep(
@@ -626,6 +653,7 @@ def microstep(
     configuration: Set[StateNode],
     states_to_invoke: Set[StateNode],
     history_value: HistoryValue,
+    current_state:State,
 ) -> Tuple[Set[StateNode], List[Action], List[Event]]:
     actions: List[Action] = []
     internal_queue: List[Event] = []
@@ -651,6 +679,7 @@ def microstep(
         actions=actions,
         internal_queue=internal_queue,
         transitions=transitions,
+        current_state=current_state,
     )
 
     return (configuration, actions, internal_queue, transitions)
@@ -1243,6 +1272,25 @@ def get_value_from_adj(state_node: StateNode, adj_list: Dict[str, Set[StateNode]
     return state_value
 
 
+# export function getValue<TC, TE extends EventObject>(
+#   rootNode: StateNode<TC, any, TE, any>,
+#   configuration: Configuration<TC, TE>
+# ): StateValue {
+#   const config = getConfiguration([rootNode], configuration);
+
+#   return getValueFromAdj(rootNode, getAdjList(config));
+# }
+
+def get_value(
+  root_node: StateNode,
+  configuration: Configuration
+)->StateValue:
+  config = get_configuration([root_node], configuration)
+
+  return get_value_from_adj(root_node, get_adj_list(config))
+
+
+
 def map_values(collection: Dict[str, Any], iteratee: Callable):
     result = {}
     collection_keys = collection.keys()
@@ -1254,8 +1302,96 @@ def map_values(collection: Dict[str, Any], iteratee: Callable):
     return result
 
 
-def update_history_states(hist, state_value):
-    def lambda_function(sub_hist, key):
+# export function mapFilterValues<T, P>(
+#   collection: { [key: string]: T },
+#   iteratee: (item: T, key: string, collection: { [key: string]: T }) => P,
+#   predicate: (item: T) => boolean
+# ): { [key: string]: P } {
+
+def map_filter_values(
+  collection: Dict ,
+  #TODO: define valid types
+  iteratee: Any,  #(item: T, key: string, collection: { [key: string]: T }) => P,
+  predicate: Any #(item: T) => boolean
+)-> Dict:
+
+    #   const result: { [key: string]: P } = {};
+    result = {} 
+
+    #   for (const key of keys(collection)) {
+    for key,item in collection.items():
+
+    #     const item = collection[key];
+        pass
+
+    #     if (!predicate(item)) {
+    #       continue;
+    #     }
+        if not predicate(item):
+            continue
+
+    #     result[key] = iteratee(item, key, collection);
+        result[key] = iteratee(item, key, collection);
+
+    #   return result;
+    return result
+
+
+# /**
+#  * Retrieves a value at the given path via the nested accessor prop.
+#  * @param props The deep path to the prop of the desired value
+#  */
+# export function nestedPath<T extends Record<string, any>>(
+#   props: string[],
+#   accessorProp: keyof T
+# ): (object: T) => T {
+def nested_path(
+  props: List[str],
+  accessorProp: str
+)-> Any: # TODO:  typedefs , (object: T) => T {
+
+
+
+#   return (object) => {
+#     let result: T = object;
+    result ={}
+    #TODO: WIP workout what this does
+    for prop in props:
+      result = result[accessorProp][prop];
+    
+
+    return  result
+
+#     for (const prop of props) {
+#       result = result[accessorProp][prop];
+#     }
+
+#     return result;
+#   };
+# }
+
+# /**
+#  * Retrieves a value at the given path via the nested accessor prop.
+#  * @param props The deep path to the prop of the desired value
+#  */
+# export function nestedPath<T extends Record<string, any>>(
+#   props: string[],
+#   accessorProp: keyof T
+# ): (object: T) => T {
+#   return (object) => {
+#     let result: T = object;
+
+#     for (const prop of props) {
+#       result = result[accessorProp][prop];
+#     }
+
+#     return result;
+#   };
+# }
+
+def update_history_states(hist:HistoryValue, state_value)->Dict:
+    def lambda_function(*args):
+        sub_hist, key = args[0:2]
         if not sub_hist:
             return None
 
@@ -1268,13 +1404,15 @@ def update_history_states(hist, state_value):
         if not sub_state_value:
             return None
 
-        return {
+        return sub_hist.update( {
             "current": sub_state_value,
             "states": update_history_states(sub_hist, sub_state_value),
-        }
+        })
 
-    return map_values(hist.states, lambda sub_hist, key: lambda_function(sub_hist, key))
+    return map_values(hist.states, lambda_function)
 
 
 def update_history_value(hist, state_value):
-    return {"current": state_value, "states": update_history_states(hist, state_value)}
+    return hist.update({
+        "current": state_value, 
+        "states": update_history_states(hist, state_value)})

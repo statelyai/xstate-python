@@ -13,7 +13,11 @@ from xstate.constants import (
     STATE_DELIMITER,
     TARGETLESS_KEY,
 )
-from xstate.types import TransitionConfig, TransitionDefinition  # , StateLike
+from xstate.types import (
+    TransitionConfig,
+    TransitionDefinition,
+    HistoryValue,
+)  # , StateLike
 
 from xstate.action import Action, to_action_objects, to_action_object
 from xstate.transition import Transition
@@ -23,6 +27,8 @@ from xstate.algorithm import (
     path_to_state_value,
     flatten,
     map_values,
+    map_filter_values,
+    nested_path,
     normalize_target,
     to_array_strict,
     to_state_value,
@@ -317,6 +323,7 @@ class StateNode:
         self.config = config
         # TODO: validate this change, initial was showing up as an event, but xstate.core has it initialized to config.initial
         # {'event': None, 'source': 'd4', 'target': ['#e3'], 'cond': None, 'actions': [], 'type': 'external', 'order': -1}
+        self.history = self.config.get("history", None)
         self.initial = self.config.get("initial", None)
         self.parent = parent
         self.id = (
@@ -453,7 +460,9 @@ class StateNode:
                     sub_state_node.type == "parallel"
                     or sub_state_node.type == "compound"
                 ):
-                    return {[state_value]: sub_state_node.initial_state_value.copy()}
+                    # TODO: should this be a copy, see JS !, what types is StateValue ? copy does not work for str
+                    # return {[state_value]: sub_state_node.initial_state_value.copy()}
+                    return {state_value: sub_state_node.initial_state_value}
 
                 return state_value
 
@@ -781,6 +790,155 @@ class StateNode:
         # return self.__cache.initial_state_value
         return initial_state_value
         #   }
+
+    def _history_value(
+        self, relative_state_value: Union[StateValue, None] = None
+    ) -> Union[HistoryValue, None]:
+
+        # private historyValue(
+        #     relativeStateValue?: StateValue | undefined
+        #   ): HistoryValue | undefined {
+
+        #     if (!keys(this.states).length) {
+        #       return undefined;
+        #     }
+
+        if len(self.states.keys()) == 0:
+            return None
+
+        #     return {
+        #       current: relativeStateValue || this.initialStateValue,
+        #       states: mapFilterValues<
+        #         StateNode<TContext, any, TEvent>,
+        #         HistoryValue | undefined
+        #       >(
+
+        def f_iteratee(state_node: StateNode, key: str, collection: Dict = None):
+            if not relative_state_value:
+                return state_node._history_value()
+
+            sub_state_value = (
+                None
+                if isinstance(relative_state_value, str)
+                else relative_state_value.get(key, None)
+            )
+            return state_node._history_value(
+                sub_state_value or state_node.initial_state_value
+            )
+
+        def f_predicate(state_node: StateNode):
+            return state_node.history == None
+
+        return HistoryValue(
+            **{
+                "current": relative_state_value or self.initial_state_value,
+                "states": map_filter_values(
+                    #         this.states,
+                    collection=self.states,
+                    iteratee=f_iteratee,
+                    predicate=f_predicate,
+                ),
+            }
+        )
+        #         (stateNode, key) => {
+        #           if (!relativeStateValue) {
+        #             return stateNode.historyValue();
+        #           }
+
+        #           const subStateValue = isString(relativeStateValue)
+        #             ? undefined
+        #             : relativeStateValue[key];
+
+        #           return stateNode.historyValue(
+        #             subStateValue || stateNode.initialStateValue
+        #           );
+        #         },
+        #         (stateNode) => !stateNode.history
+        #       )
+        #     };
+        #   }
+
+    def resolve_history(self, history_value: HistoryValue) -> List[StateNode]:
+        """Resolves to the historical value(s) of the parent state node,
+           represented by state nodes.
+
+        Args:
+            history_value (HistoryValue): the value to resolve
+
+        Returns:
+            List[StateNode]: historical value(s) of the parent state node
+        """
+
+        #   /**
+        #    * Resolves to the historical value(s) of the parent state node,
+        #    * represented by state nodes.
+        #    *
+        #    * @param historyValue
+        #    */
+        #   private resolveHistory(
+        #     historyValue?: HistoryValue
+        #   ): Array<StateNode<TContext, any, TEvent, any>> {
+        #     if (this.type !== 'history') {
+        #       return [this];
+        #     }
+
+        #     const parent = this.parent!;
+        parent = self.parent.copy()
+
+        #     if (!historyValue) {
+        #       const historyTarget = this.target;
+        #       return historyTarget
+        #         ? flatten(
+        #             toStatePaths(historyTarget).map((relativeChildPath) =>
+        #               parent.getFromRelativePath(relativeChildPath)
+        #             )
+        #           )
+        #         : parent.initialStateNodes;
+        #     }
+        if not history_value:
+            history_target = self.target
+            return (
+                flatten(
+                    [
+                        parent.get_from_relative_path(relative_child_path)
+                        for relative_child_path in to_state_paths(history_target)
+                    ]
+                )
+                if history_target
+                else parent.initial_state_nodes
+            )
+
+        #     const subHistoryValue = nestedPath<HistoryValue>(
+        #       parent.path,
+        #       'states'
+        #     )(historyValue).current;
+
+        sub_history_value = nested_path(parent.path, "states")(history_value).current
+
+        #     if (isString(subHistoryValue)) {
+        #       return [parent.getStateNode(subHistoryValue)];
+        #     }
+
+        if isinstance(sub_history_value, str):
+            return [parent.get_state_node(sub_history_value)]
+
+        #     return flatten(
+        #       toStatePaths(subHistoryValue!).map((subStatePath) => {
+        #         return this.history === 'deep'
+        #           ? parent.getFromRelativePath(subStatePath)
+        #           : [parent.states[subStatePath[0]]];
+        #       })
+        #     );
+        #   }
+
+        return flatten(
+            [
+                parent.get_from_relative_path(sub_state_path)
+                if self.history == "deep"
+                else [parent.states[sub_state_path[0]]]
+                for sub_state_path in to_state_paths(sub_history_value)
+            ]
+        )
 
     def _get_relative(self, target: str) -> "StateNode":
         if target.startswith("#"):

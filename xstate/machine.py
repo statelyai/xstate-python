@@ -15,6 +15,8 @@ from xstate.algorithm import (
     macrostep,
     main_event_loop,
     get_configuration_from_js,
+    update_history_value,
+    get_value,
 )
 
 if TYPE_CHECKING:
@@ -77,9 +79,9 @@ class Machine:
             #             : this.resolveState(State_1.State.from(state, context));
             # TODO implement context
             # currentState = state if   context is None else  self.resolve_state(State.from(state, context)
-            currentState = state
+            current_state = state
         elif isinstance(state, dict):
-            currentState = state
+            current_state = state
         # else {
         else:
             #     var resolvedStateValue = utils_1.isString(state)
@@ -98,7 +100,7 @@ class Machine:
 
             # TODO implement context
             # resolved_context = context  if context is not None and  && context !== void 0 ? : this.machine.context;
-            currentState = self.root.resolve_state(
+            current_state = self.root.resolve_state(
                 State._from(
                     state_value=resolved_state_value,
                     # TODO implement context
@@ -107,7 +109,7 @@ class Machine:
             )
 
         configuration = get_configuration_from_state(  # TODO DEBUG FROM HERE
-            from_node=self.root, state=currentState, partial_configuration=set()
+            from_node=self.root, state=current_state, partial_configuration=set()
         )
 
         possible_transitions = [
@@ -115,19 +117,57 @@ class Machine:
             for statenode in configuration
             for transition in statenode.transitions
         ]
-        (configuration, _actions, transitions) = main_event_loop(
-            configuration, Event(event)
+        (configuration, _actions, transitions, history_value) = main_event_loop(
+            configuration, Event(event), current_state
         )
 
         actions, warnings = self._get_actions(_actions)
         for w in warnings:
             logger.warning(w)
 
+        # const willTransition =
+        # !currentState || stateTransition.transitions.length > 0;
+        # const resolvedStateValue = willTransition
+        # ? getValue(this.machine, configuration)
+        # : undefined;
+
+        will_transition = not current_state or len(transitions) > 0
+        resolved_state_value = (
+            get_value(self.root, configuration) if will_transition else None
+        )
+        assert (
+            len(transitions) == 1
+        ), f"Can only processes 1 transition, found multiple {transitions}"
         return State(
             configuration=configuration,
             context={},
             actions=actions,
             transitions=transitions,
+            # historyValue: resolvedStateValue
+            #     ? historyValue
+            #     ? updateHistoryValue(historyValue, resolvedStateValue)
+            #     : undefined
+            #     : currentState
+            #     ? currentState.historyValue
+            #     : undefined,
+            # history:
+            #     !resolvedStateValue || stateTransition.source
+            #     ? currentState
+            #     : undefined,        )
+            history_value=(
+                (
+                    update_history_value(history_value, resolved_state_value)
+                    if history_value
+                    else None
+                )
+                if resolved_state_value
+                else (current_state.history_value if current_state else None)
+            ),
+            history=(
+                current_state
+                if (not resolved_state_value or list(transitions)[0].source)
+                else None
+            ),
         )
 
     def _get_actions(self, actions) -> List[lambda: None]:
