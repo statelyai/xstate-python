@@ -429,10 +429,8 @@ def enter_states(
     hv = s._history_value() if s._history_value() else (
                     s.machine.root._history_value(current_state.value) if list(enabled_transitions)[0].source else (
                         None if s else None))
-    #TODO: clean this up, use update
     history_value.update(hv.__dict__)
-    # history_value.current = hv.current
-    # history_value.states = hv.states
+
     return (configuration, actions, internal_queue, transitions)
 
 
@@ -1389,17 +1387,42 @@ def nested_path(
 #   };
 # }
 
+
+# export function updateHistoryStates(
+#   hist: HistoryValue,
+#   stateValue: StateValue
+# ): Record<string, HistoryValue | undefined> {
+#   return mapValues(hist.states, (subHist, key) => {
+#     if (!subHist) {
+#       return undefined;
+#     }
+#     const subStateValue =
+#       (isString(stateValue) ? undefined : stateValue[key]) ||
+#       (subHist ? subHist.current : undefined);
+
+#     if (!subStateValue) {
+#       return undefined;
+#     }
+
+#     return {
+#       current: subStateValue,
+#       states: updateHistoryStates(subHist, subStateValue)
+#     };
+#   });
+# }
+
+
 def update_history_states(hist:HistoryValue, state_value)->Dict:
     def lambda_function(*args):
         sub_hist, key = args[0:2]
         if not sub_hist:
             return None
 
-        sub_state_value = (
-            None
-            if isinstance(state_value, str)
-            else (state_value[key] or (sub_hist.current if sub_hist else None))
-        )
+        sub_state_value = ( 
+            (None if isinstance(state_value, str) else (state_value[key] ))
+              or (sub_hist.current if sub_hist else None)
+              )
+        
 
         if not sub_state_value:
             return None
@@ -1411,6 +1434,15 @@ def update_history_states(hist:HistoryValue, state_value)->Dict:
 
     return map_values(hist.states, lambda_function)
 
+# export function updateHistoryValue(
+#   hist: HistoryValue,
+#   stateValue: StateValue
+# ): HistoryValue {
+#   return {
+#     current: stateValue,
+#     states: updateHistoryStates(hist, stateValue)
+#   };
+# }
 
 def update_history_value(hist, state_value):
     return hist.update({
