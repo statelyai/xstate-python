@@ -817,7 +817,15 @@ export interface HistoryStateNodeConfig<TContext, TEvent extends EventObject>
   history: 'shallow' | 'deep' | true;
   target: StateValue | undefined;
 }
+"""
 
+@dataclass
+class HistoryStateNodeConfig(EventObject):
+  history: str = False
+  type:str = None
+  target: Union[StateValue ,None]=None
+
+"""
 export interface FinalStateNodeConfig<TContext, TEvent extends EventObject>
   extends AtomicStateNodeConfig<TContext, TEvent> {
   type: 'final';

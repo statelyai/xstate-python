@@ -139,7 +139,7 @@ class TestHistory:
             return history_machine.transition(off_state, "POWER").value
 
         test = JSstyleTest()
-        test.it(pytest_func_docstring_summary(request)).expect(do_this_test()).to_equal(
+        test.it(pytest_func_docstring_summary(request)).expect(do_this_test()).toEqual(
             #   expect(historyMachine.transition(offState, 'POWER').value).toEqual({
             #     on: 'second'
             {"on": "second"}

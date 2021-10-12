@@ -75,9 +75,10 @@ def compute_entry_set(
     states_for_default_entry: Set[StateNode],
     default_history_content: Dict,
     history_value: HistoryValue,
+    current_state: StateValue,
 ):
     for t in transitions:
-        for s in t.target:
+        for s in t.target_consider_history(current_state=current_state):
             add_descendent_states_to_enter(
                 s,
                 states_to_enter=states_to_enter,
@@ -381,6 +382,7 @@ def enter_states(
         states_for_default_entry=states_for_default_entry,
         default_history_content=default_history_content,
         history_value=history_value,
+        current_state=current_state,
     )
 
     # TODO: sort
@@ -1346,19 +1348,18 @@ def map_filter_values(
 def nested_path(
   props: List[str],
   accessorProp: str
-)-> Any: # TODO:  typedefs , (object: T) => T {
-
-
-
+)-> Callable: 
 #   return (object) => {
 #     let result: T = object;
-    result ={}
-    #TODO: WIP workout what this does
-    for prop in props:
-      result = result[accessorProp][prop];
-    
+    def func(object):
+        result =object
+        
+        for prop in props:
+            result = result[accessorProp][prop]
+        
 
-    return  result
+        return  result
+    return func
 
 #     for (const prop of props) {
 #       result = result[accessorProp][prop];

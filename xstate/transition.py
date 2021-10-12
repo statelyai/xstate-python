@@ -8,6 +8,7 @@ import xstate.algorithm as algorithm
 
 from xstate.action import to_action_objects
 from xstate.event import Event
+from xstate.types import StateValue
 
 if TYPE_CHECKING:
     from xstate.action import Action
@@ -76,6 +77,30 @@ class Transition:
                 return [self.source._get_relative(self.config["target"])]
 
             return [self.source._get_relative(v) for v in self.config["target"]]
+        else:
+            return [self.config] if self.config else []
+
+    def target_consider_history(self, current_state: StateValue) -> List["StateNode"]:
+        if isinstance(self.config, str):
+            return self.source.parent.get_from_relative_path(
+                algorithm.to_state_path(self.config), current_state.history_value
+            )
+
+        # TODO: WIP finish testing the following implementing history
+        # elif True:
+        #     assert False, "Still have to implement history for config is  dict or other"
+        elif isinstance(self.config, dict):
+            if isinstance(self.config["target"], str):
+                return [
+                    self.source._get_relative(
+                        self.config["target"], current_state.history_value
+                    )
+                ]
+
+            return [
+                self.source._get_relative(v, current_state.history_value)
+                for v in self.config["target"]
+            ]
         else:
             return [self.config] if self.config else []
 

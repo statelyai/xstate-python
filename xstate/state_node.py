@@ -17,6 +17,7 @@ from xstate.types import (
     TransitionConfig,
     TransitionDefinition,
     HistoryValue,
+    HistoryStateNodeConfig,
 )  # , StateLike
 
 from xstate.action import Action, to_action_objects, to_action_object
@@ -98,6 +99,7 @@ class StateNode:
     transitions: List[Transition]
     id: str
     key: str
+    path: List[str] = []
     states: Dict[str, "StateNode"]
     delimiter: str = STATE_DELIMITER
     __cache: Any  # TODO TD see above JS and TODO for implement __cache
@@ -317,7 +319,7 @@ class StateNode:
         # { "type": "compound", "states": { ... } }
         config,
         machine: "Machine",
-        parent: Union["StateNode", "Machine"] = None,
+        parent: Union["StateNode", "Machine", None] = None,
         key: str = None,
     ):
         self.config = config
@@ -343,7 +345,14 @@ class StateNode:
             else []
         )
 
-        self.key = key
+        self.key = (
+            key
+            or self.config.get("key", None)
+            # or self.options._key or
+            or self.config.get("id", None)
+            or "(machine)"
+        )
+        self.path = self.parent.path + [self.key] if self.parent else []
         self.states = {
             k: StateNode(v, machine=machine, parent=self, key=k)
             for k, v in config.get("states", {}).items()
@@ -579,61 +588,7 @@ class StateNode:
         #     return stateNode;
         return state_node
 
-        #   };
-
-    def get_state_node_by_path(self, state_path: str) -> StateNode:
-        """Returns the relative state node from the given `statePath`, or throws.
-
-        Args:
-            statePath (string):The string or string array relative path to the state node.
-
-        Raises:
-            Exception: [??????]
-
-        Returns:
-            StateNode: the relative state node from the given `statePath`, or throws.
-        """
-
-        #     if (typeof statePath === 'string' && isStateId(statePath)) {
-        #       try {
-        #         return this.getStateNodeById(statePath.slice(1));
-        #       } catch (e) {
-        #         // try individual paths
-        #         // throw e;
-        #       }
-        #     }
-
-        if isinstance(state_path, str) and is_state_id(state_path):
-            try:
-                return self.get_state_node_by_id(state_path[1:].copy())
-            except Exception as e:
-                # // try individual paths
-                # // throw e;
-                pass
-
-            #     const arrayStatePath = toStatePath(statePath, this.delimiter).slice();
-            array_state_path = to_state_path(state_path, self.delimiter)[:].copy()
-            #     let currentStateNode: StateNode<TContext, any, TEvent, any> = this;
-            current_state_node = self
-
-            #     while (arrayStatePath.length) {
-            while len(array_state_path) > 0:
-                #       const key = arrayStatePath.shift()!;
-                key = (
-                    array_state_path.pop()
-                )  # TODO check equivaelance to js .shift()! , https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#non-null-assertion-operator
-                #       if (!key.length) {
-                #         break;
-                #       }
-
-                if len(key) == 0:
-                    break
-
-                #       currentStateNode = currentStateNode.getStateNode(key);
-                current_state_node = current_state_node.get_state_node(key)
-
-            #     return currentStateNode;
-            return current_state_node
+    #   };
 
     #   private getResolvedPath(stateIdentifier: string): string[] {
     def _get_resolved_path(self, state_identifier: str) -> List[str]:
@@ -858,7 +813,61 @@ class StateNode:
         #     };
         #   }
 
-    def resolve_history(self, history_value: HistoryValue) -> List[StateNode]:
+    @property
+    def target(self) -> Union[StateValue, None]:
+        """The target state value of the history state node, if it exists. This represents the
+           default state value to transition to if no history value exists yet.
+
+        Returns:
+            Union[ StateValue , None ]: The target state value of the history state node
+        """
+
+        #   /**
+        #    * The target state value of the history state node, if it exists. This represents the
+        #    * default state value to transition to if no history value exists yet.
+        #    */
+        #   public get target(): StateValue | undefined {
+
+        #     let target;
+        target = None
+        #     if (this.type === 'history') {
+        if self.type == "history":
+            #       const historyConfig = this.config as HistoryStateNodeConfig<
+            #         TContext,
+            #         TEvent
+            #       >;
+            history_config = HistoryStateNodeConfig(
+                **self.config
+            )  # as HistoryStateNodeConfig<
+            #       if (isString(historyConfig.target)) {
+            if isinstance(history_config.target, str):
+                #         target = isStateId(historyConfig.target)
+                #           ? pathToStateValue(
+                #               this.machine
+                #                 .getStateNodeById(historyConfig.target)
+                #                 .path.slice(this.path.length - 1)
+                #             )
+                #           : historyConfig.target;
+                target = (
+                    path_to_state_value(
+                        (
+                            self.machine.root.get_state_node_by_id(
+                                history_config.target
+                            ).path[(self.path.length - 1)]
+                        )
+                    )
+                    if is_state_id(history_config.target)
+                    else history_config.target
+                )
+            #       } else {
+            else:
+                target = history_config.target
+
+        #     return target;
+        return target
+        #   }
+
+    def resolve_history(self, history_value: HistoryValue = None) -> List[StateNode]:
         """Resolves to the historical value(s) of the parent state node,
            represented by state nodes.
 
@@ -883,7 +892,7 @@ class StateNode:
         #     }
 
         #     const parent = this.parent!;
-        parent = self.parent.copy()
+        parent = self.parent  # .copy()
 
         #     if (!historyValue) {
         #       const historyTarget = this.target;
@@ -913,7 +922,9 @@ class StateNode:
         #       'states'
         #     )(historyValue).current;
 
-        sub_history_value = nested_path(parent.path, "states")(history_value).current
+        sub_history_value = nested_path(parent.path, "states")(
+            history_value.__dict__
+        ).current
 
         #     if (isString(subHistoryValue)) {
         #       return [parent.getStateNode(subHistoryValue)];
@@ -963,8 +974,60 @@ class StateNode:
         #     relativePath: string[]
         #   ): Array<StateNode<TContext, any, TEvent, any>> {
 
+    def get_relative_state_nodes(
+        self,
+        relative_state_id: StateNode,
+        history_value: HistoryValue = None,
+        resolve: bool = True,
+    ) -> List[StateNode]:
+        """Returns the leaf nodes from a state path relative to this state node.
+
+        Args:
+            relative_state_id (StateNode): The relative state path to retrieve the state nodes
+            history_value (HistoryValue, optional):The previous state to retrieve history. Defaults to None.
+            resolve (bool, optional): Whether state nodes should resolve to initial child state nodes. Defaults to True.
+
+        Raises:
+            Exception: [description]
+            Exception: [description]
+            Exception: [description]
+            Exception: [description]
+
+        Returns:
+            List[StateNode]: leaf nodes from a state path relative to this state node
+        """
+        #   /**
+        #    * Returns the leaf nodes from a state path relative to this state node.
+        #    *
+        #    * @param relativeStateId The relative state path to retrieve the state nodes
+        #    * @param history The previous state to retrieve history
+        #    * @param resolve Whether state nodes should resolve to initial child state nodes
+        #    */
+        #   public getRelativeStateNodes(
+        #     relativeStateId: StateNode<TContext, any, TEvent>,
+        #     historyValue?: HistoryValue,
+        #     resolve: boolean = true
+        #   ): Array<StateNode<TContext, any, TEvent>> {
+
+        #     return resolve
+        #       ? relativeStateId.type === 'history'
+        #         ? relativeStateId.resolveHistory(historyValue)
+        #         : relativeStateId.initialStateNodes
+        #       : [relativeStateId];
+        #   }
+
+        return (
+            (
+                relative_state_id.resolve_history(history_value)
+                if relative_state_id.type == "history"
+                else relative_state_id.initial_state_nodes
+            )
+            if resolve
+            else [relative_state_id]
+        )
+
     def get_from_relative_path(
-        self, relative_path: Union[str, List(str)]
+        self, relative_path: Union[str, List(str)], history_value: HistoryValue = None
     ) -> List[StateNode]:
 
         #     if (!relativePath.length) {
@@ -993,7 +1056,7 @@ class StateNode:
         #       return childStateNode.resolveHistory();
         #     }
         if child_state_node.type == "history":
-            return child_state_node.resolve_history()
+            return child_state_node.resolve_history(history_value)
 
         #     if (!this.states[stateKey]) {
         #       throw new Error(
@@ -1007,7 +1070,9 @@ class StateNode:
             raise Exception(msg)
 
         #     return this.states[stateKey].getFromRelativePath(childStatePath);
-        return self.states[state_key].get_from_relative_path(child_state_path)
+        return self.states[state_key].get_from_relative_path(
+            child_state_path, history_value
+        )
 
     def get_state_node(self, state_key: str) -> StateNode:
         #   public getStateNode(
@@ -1149,147 +1214,145 @@ class StateNode:
         sub_state_nodes.extend(reduce_results)
         return sub_state_nodes
 
+    #   /**
+    #    * Returns `true` if this state node explicitly handles the given event.
+    #    *
+    #    * @param event The event in question
+    #    */
+    #   public handles(event: Event<TEvent>): boolean {
+    #     const eventType = getEventType<TEvent>(event);
 
-#   /**
-#    * Returns `true` if this state node explicitly handles the given event.
-#    *
-#    * @param event The event in question
-#    */
-#   public handles(event: Event<TEvent>): boolean {
-#     const eventType = getEventType<TEvent>(event);
+    #     return this.events.includes(eventType);
+    #   }
 
-#     return this.events.includes(eventType);
-#   }
-
-# const validateArrayifiedTransitions = <TContext>(
-#   stateNode: StateNode<any, any, any, any>,
-#   event: string,
-#   transitions: Array<
-#     TransitionConfig<TContext, EventObject> & {
-#       event: string;
-#     }
-#   >
-# ) => {
-def validate_arrayified_transitions(
-    state_node: StateNode,
-    event: str,
-    transitions: List[TransitionConfig],
-    #   TContext, EventObject> & {
+    # const validateArrayifiedTransitions = <TContext>(
+    #   stateNode: StateNode<any, any, any, any>,
+    #   event: string,
+    #   transitions: Array<
+    #     TransitionConfig<TContext, EventObject> & {
     #       event: string;
     #     }
     #   >
-):
+    # ) => {
+    def validate_arrayified_transitions(
+        state_node: StateNode,
+        event: str,
+        transitions: List[TransitionConfig],
+        #   TContext, EventObject> & {
+        #       event: string;
+        #     }
+        #   >
+    ):
 
-    #   const hasNonLastUnguardedTarget = transitions
-    #     .slice(0, -1)
-    #     .some(
-    #       (transition) =>
-    #         !('cond' in transition) &&
-    #         !('in' in transition) &&
-    #         (isString(transition.target) || isMachine(transition.target))
-    #     );
-    has_non_last_unguarded_target = any(
-        [
-            (
-                "cond" not in transition
-                and "in" not in transition
-                and (
-                    isinstance(transition.target, str) or is_machine(transition.target)
+        #   const hasNonLastUnguardedTarget = transitions
+        #     .slice(0, -1)
+        #     .some(
+        #       (transition) =>
+        #         !('cond' in transition) &&
+        #         !('in' in transition) &&
+        #         (isString(transition.target) || isMachine(transition.target))
+        #     );
+        has_non_last_unguarded_target = any(
+            [
+                (
+                    "cond" not in transition
+                    and "in" not in transition
+                    and (
+                        isinstance(transition.target, str)
+                        or is_machine(transition.target)
+                    )
                 )
-            )
-            for transition in transitions[0:-1]
-        ]
-    )
-
-    # .slice(0, -1)
-    # .some(
-    #   (transition) =>
-    #     !('cond' in transition) &&
-    #     !('in' in transition) &&
-    #     (isString(transition.target) || isMachine(transition.target))
-    # );
-
-    #   const eventText =
-    #     event === NULL_EVENT ? 'the transient event' : `event '${event}'`;
-    eventText = "the transient event" if event == NULL_EVENT else f"event '{event}'"
-
-    #   warn(
-    #     !hasNonLastUnguardedTarget,
-    #     `One or more transitions for ${eventText} on state '${stateNode.id}' are unreachable. ` +
-    #       `Make sure that the default transition is the last one defined.`
-    #   );
-    if not has_non_last_unguarded_target:
-        logger.warning(
-            (
-                f"One or more transitions for {eventText} on state '{state_node.id}' are unreachable. "
-                f"Make sure that the default transition is the last one defined."
-            )
+                for transition in transitions[0:-1]
+            ]
         )
 
+        # .slice(0, -1)
+        # .some(
+        #   (transition) =>
+        #     !('cond' in transition) &&
+        #     !('in' in transition) &&
+        #     (isString(transition.target) || isMachine(transition.target))
+        # );
 
-#  /**
-#    * Returns the relative state node from the given `statePath`, or throws.
-#    *
-#    * @param statePath The string or string array relative path to the state node.
-#    */
-#   public getStateNodeByPath(
-#     statePath: string | string[]
-#   ): StateNode<TContext, any, TEvent, any> {
+        #   const eventText =
+        #     event === NULL_EVENT ? 'the transient event' : `event '${event}'`;
+        eventText = "the transient event" if event == NULL_EVENT else f"event '{event}'"
 
+        #   warn(
+        #     !hasNonLastUnguardedTarget,
+        #     `One or more transitions for ${eventText} on state '${stateNode.id}' are unreachable. ` +
+        #       `Make sure that the default transition is the last one defined.`
+        #   );
+        if not has_non_last_unguarded_target:
+            logger.warning(
+                (
+                    f"One or more transitions for {eventText} on state '{state_node.id}' are unreachable. "
+                    f"Make sure that the default transition is the last one defined."
+                )
+            )
 
-def get_state_node_by_path(self, state_path: str) -> StateNode:
-    """Returns the relative state node from the given `statePath`, or throws.
+    #  /**
+    #    * Returns the relative state node from the given `statePath`, or throws.
+    #    *
+    #    * @param statePath The string or string array relative path to the state node.
+    #    */
+    #   public getStateNodeByPath(
+    #     statePath: string | string[]
+    #   ): StateNode<TContext, any, TEvent, any> {
 
-    Args:
-        statePath (string):The string or string array relative path to the state node.
+    def get_state_node_by_path(self, state_path: str) -> StateNode:
+        """Returns the relative state node from the given `statePath`, or throws.
 
-    Raises:
-        Exception: [??????]
+        Args:
+            statePath (string):The string or string array relative path to the state node.
 
-    Returns:
-        StateNode: the relative state node from the given `statePath`, or throws.
-    """
+        Raises:
+            Exception: [??????]
 
-    #     if (typeof statePath === 'string' && isStateId(statePath)) {
-    #       try {
-    #         return this.getStateNodeById(statePath.slice(1));
-    #       } catch (e) {
-    #         // try individual paths
-    #         // throw e;
-    #       }
-    #     }
+        Returns:
+            StateNode: the relative state node from the given `statePath`, or throws.
+        """
 
-    if isinstance(state_path, str) and is_state_id(state_path):
-        try:
-            return self.get_state_node_by_id(state_path[1:].copy())
-        except Exception as e:
-            # // try individual paths
-            # // throw e;
-            pass
+        #     if (typeof statePath === 'string' && isStateId(statePath)) {
+        #       try {
+        #         return this.getStateNodeById(statePath.slice(1));
+        #       } catch (e) {
+        #         // try individual paths
+        #         // throw e;
+        #       }
+        #     }
 
-        #     const arrayStatePath = toStatePath(statePath, this.delimiter).slice();
-        array_state_path = to_state_path(state_path, self.delimiter)[:].copy()
-        #     let currentStateNode: StateNode<TContext, any, TEvent, any> = this;
-        current_state_node = self
+        if isinstance(state_path, str) and is_state_id(state_path):
+            try:
+                return self.get_state_node_by_id(state_path[1:].copy())
+            except Exception as e:
+                # // try individual paths
+                # // throw e;
+                pass
 
-        #     while (arrayStatePath.length) {
-        while len(array_state_path) > 0:
-            #       const key = arrayStatePath.shift()!;
-            key = (
-                array_state_path.pop()
-            )  # TODO check equivaelance to js .shift()! , https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#non-null-assertion-operator
-            #       if (!key.length) {
-            #         break;
-            #       }
+            #     const arrayStatePath = toStatePath(statePath, this.delimiter).slice();
+            array_state_path = to_state_path(state_path, self.delimiter)[:].copy()
+            #     let currentStateNode: StateNode<TContext, any, TEvent, any> = this;
+            current_state_node = self
 
-            if len(key) == 0:
-                break
+            #     while (arrayStatePath.length) {
+            while len(array_state_path) > 0:
+                #       const key = arrayStatePath.shift()!;
+                key = (
+                    array_state_path.pop()
+                )  # TODO check equivaelance to js .shift()! , https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#non-null-assertion-operator
+                #       if (!key.length) {
+                #         break;
+                #       }
 
-            #       currentStateNode = currentStateNode.getStateNode(key);
-            current_state_node = current_state_node.get_state_node(key)
+                if len(key) == 0:
+                    break
 
-        #     return currentStateNode;
-        return current_state_node
+                #       currentStateNode = currentStateNode.getStateNode(key);
+                current_state_node = current_state_node.get_state_node(key)
+
+            #     return currentStateNode;
+            return current_state_node
 
     #   private resolveTarget(
     #     _target: Array<string | StateNode<TContext, any, TEvent>> | undefined
@@ -1492,7 +1555,9 @@ def get_state_node_by_path(self, state_path: str) -> StateNode:
                 )
 
                 if not IS_PRODUCTION:
-                    validate_arrayified_transitions(self, key, transition_config_array)
+                    self.validate_arrayified_transitions(
+                        self, key, transition_config_array
+                    )
 
                 return transition_config_array
 
@@ -1609,8 +1674,9 @@ def get_state_node_by_path(self, state_path: str) -> StateNode:
         return formatted_transitions
 
     #   Object.defineProperty(StateNode.prototype, "transitions", {
+    # TODO: this clashes with the attribute `transition` so relabelled to `get_transitions` need to understand this property in relation to the attribute, how does format_transitions work
     @property
-    def transitions(self) -> List:
+    def get_transitions(self) -> List:
         #     /**
         #      * All the transitions that can be taken from this state node.
         #      */
@@ -1621,51 +1687,9 @@ def get_state_node_by_path(self, state_path: str) -> StateNode:
             self.__cache.transitions = self.format_transitions()
         return self.__cache.transitions
 
-    #     enumerable: false,
-    #     configurable: true
-    #   });
-
-    def get_state_nodes(state: Union[StateValue, State]) -> List["StateNode"]:
-        """Returns the state nodes represented by the current state value.
-
-        Args:
-            state (Union[StateValue, State]): The state value or State instance
-
-        Returns:
-            List[StateNode]: list of state nodes represented by the current state value.
-        """
-
-        if not state:
-            return []
-
-    #     stateValue = state.value if isinstance(state,State) \
-    #                                 else toStateValue(state, this.delimiter);
-
-    #     if (isString(stateValue)) {
-    #     const initialStateValue = this.getStateNode(stateValue).initial;
-
-    #     return initialStateValue !== undefined
-    #         ? this.getStateNodes({ [stateValue]: initialStateValue } as StateValue)
-    #         : [this, this.states[stateValue]];
-    #     }
-
-    #     const subStateKeys = keys(stateValue);
-    #     const subStateNodes: Array<
-    #     StateNode<TContext, any, TEvent, TTypestate>
-    #     > = subStateKeys.map((subStateKey) => this.getStateNode(subStateKey));
-
-    #     subStateNodes.push(this);
-
-    #     return subStateNodes.concat(
-    #     subStateKeys.reduce((allSubStateNodes, subStateKey) => {
-    #         const subStateNode = this.getStateNode(subStateKey).getStateNodes(
-    #         stateValue[subStateKey]
-    #         );
-
-    #         return allSubStateNodes.concat(subStateNode);
-    #     }, [] as Array<StateNode<TContext, any, TEvent, TTypestate>>)
-    #     );
-    # }
+        #     enumerable: false,
+        #     configurable: true
+        #   });
 
     # TODO: __repr__ and __str__ should be swapped,  __repr__ should be able to instantiate an instance
     # def __repr__(self) -> str:
