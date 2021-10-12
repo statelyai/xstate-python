@@ -4,6 +4,8 @@ from __future__ import (
 from typing import TYPE_CHECKING, Dict, List, Union
 import logging
 
+from xstate.types import HistoryValue
+
 logger = logging.getLogger(__name__)
 
 # from xstate import transition
@@ -137,7 +139,7 @@ class Machine:
         )
         assert (
             len(transitions) == 1
-        ), f"Can only processes 1 transition, found multiple {transitions}"
+        ), f"Can only processes 1 transition, found {len(transitions)} transitions: {transitions}"
         return State(
             configuration=configuration,
             context={},
@@ -226,10 +228,11 @@ class Machine:
             enabled_transitions=[self.root.initial_transition],
             configuration=set(),
             states_to_invoke=set(),
-            history_value={},
+            history_value=HistoryValue(),
             actions=[],
             internal_queue=[],
             transitions=[],
+            current_state=None,
         )
 
         (configuration, _actions, transitions) = macrostep(

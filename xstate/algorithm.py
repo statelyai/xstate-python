@@ -427,11 +427,12 @@ def enter_states(
         #     : undefined
 
         #   : undefined;      
-
-    hv = s._history_value() if s._history_value() else (
-                    s.machine.root._history_value(current_state.value) if list(enabled_transitions)[0].source else (
-                        None if s else None))
-    history_value.update(hv.__dict__)
+        #TODO check statein-tests where  current_state is a dict type
+        hv = s._history_value() if s._history_value() else (
+                        s.machine.root._history_value(current_state.value if str(type(current_state)) == "<class 'xstate.state.State'>" else None) if list(enabled_transitions)[0].source else (
+                            None if s else None))
+        if hv:
+            history_value.update(hv.__dict__)
 
     return (configuration, actions, internal_queue, transitions)
 
@@ -592,6 +593,7 @@ def main_event_loop(
         actions=actions,
         internal_queue=internal_queue,
         transitions=transitions,
+        current_state=current_state,
     )
 
     return (configuration, actions, transitions,history_value)
@@ -602,6 +604,7 @@ def macrostep(
     actions: List[Action],
     internal_queue: List[Event],
     transitions: List[Transition],
+    current_state: State=None,
 ) -> Tuple[Set[StateNode], List[Action]]:
     enabled_transitions = set()
     macrostep_done = False
@@ -625,6 +628,7 @@ def macrostep(
                 states_to_invoke=set(),  # TODO
                 history_value={},  # TODO
                 transitions=transitions,
+                current_state=current_state,
             )
 
     return (configuration, actions, transitions)
@@ -1420,7 +1424,7 @@ def update_history_states(hist:HistoryValue, state_value)->Dict:
             return None
 
         sub_state_value = ( 
-            (None if isinstance(state_value, str) else (state_value[key] ))
+            (None if isinstance(state_value, str) else (state_value.get(key,None) ))
               or (sub_hist.current if sub_hist else None)
               )
         

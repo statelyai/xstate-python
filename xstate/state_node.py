@@ -693,18 +693,18 @@ class StateNode:
         #       );
         if self.type == "parallel":
             # TODO: wip
-            initial_state_value = [
-                state.initial_state_value
+            initial_state_value = {
+                key: state.initial_state_value
                 if state.initial_state_value is not None
                 else EMPTY_OBJECT
-                for state in self.states
+                for key, state in self.states.items()
                 # for state in (
                 #     self.states
                 #     if not isinstance(self.states, dict)
                 #     else [state_node for key, state_node in self.states.items()]
                 # )
                 if state.type != "history"
-            ]
+            }
 
         #     } else if (this.initial !== undefined) {
         #       if (!this.states[this.initial]) {

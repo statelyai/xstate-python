@@ -93,12 +93,16 @@ class Transition:
             if isinstance(self.config["target"], str):
                 return [
                     self.source._get_relative(
-                        self.config["target"], current_state.history_value
+                        self.config["target"],
+                        # current_state.history_value
                     )
                 ]
 
             return [
-                self.source._get_relative(v, current_state.history_value)
+                self.source._get_relative(
+                    v,
+                    # current_state.history_value
+                )
                 for v in self.config["target"]
             ]
         else:
