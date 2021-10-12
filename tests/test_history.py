@@ -13,7 +13,7 @@ The following tests exist
 """
 import pytest
 
-from tests.test_machine import test_history_state
+
 from .utils_for_tests import JSstyleTest, pytest_func_docstring_summary
 
 from xstate.algorithm import get_configuration_from_js
