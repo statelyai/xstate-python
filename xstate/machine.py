@@ -140,7 +140,8 @@ class Machine:
         assert (
             len(transitions) >= 1
         ), f"found {len(transitions)} transitions: {transitions}"
-        return State(
+
+        next_state = State(
             configuration=configuration,
             context={},
             actions=actions,
@@ -171,6 +172,13 @@ class Machine:
                 else None
             ),
         )
+        # Dispose of penultimate histories to prevent memory leaks
+        if (
+            next_state.history
+            and str(type(next_state.history)) == "<class 'xstate.state.State'>"
+        ):
+            next_state.history.history = None
+        return next_state
 
     def _get_actions(self, actions) -> List[lambda: None]:
         result = []

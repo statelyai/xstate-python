@@ -216,15 +216,33 @@ class TestHistory:
         #   });
         # });
 
+    def test_history_should_dispose_of_previous_histories(self, request):
+        """should dispose of previous histories"""
+
+        def test_procedure():
+
+            onSecondState = history_machine.transition("on", "SWITCH")
+            offState = history_machine.transition(onSecondState, "H_POWER")
+            onState = history_machine.transition(offState, "H_POWER")
+            nextState = history_machine.transition(onState, "H_POWER")
+            test_result = nextState.history.history is None
+            return test_result
+
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure()
+        ).toEqual(True)
+
+    # it('should dispose of previous histories', () => {
+    #   const onSecondState = historyMachine.transition('on', 'SWITCH');
+    #   const offState = historyMachine.transition(onSecondState, 'H_POWER');
+    #   const onState = historyMachine.transition(offState, 'H_POWER');
+    #   const nextState = historyMachine.transition(onState, 'H_POWER');
+    #   expect(nextState.history!.history).not.toBeDefined();
+    # });
+
 
 """
-  it('should dispose of previous histories', () => {
-    const onSecondState = historyMachine.transition('on', 'SWITCH');
-    const offState = historyMachine.transition(onSecondState, 'H_POWER');
-    const onState = historyMachine.transition(offState, 'H_POWER');
-    const nextState = historyMachine.transition(onState, 'H_POWER');
-    expect(nextState.history!.history).not.toBeDefined();
-  });
 
   it('should go to the most recently visited state by a transient transition', () => {
     const machine = createMachine({
