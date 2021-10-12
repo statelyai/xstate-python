@@ -138,8 +138,8 @@ class Machine:
             get_value(self.root, configuration) if will_transition else None
         )
         assert (
-            len(transitions) == 1
-        ), f"Can only processes 1 transition, found {len(transitions)} transitions: {transitions}"
+            len(transitions) >= 1
+        ), f"found {len(transitions)} transitions: {transitions}"
         return State(
             configuration=configuration,
             context={},
