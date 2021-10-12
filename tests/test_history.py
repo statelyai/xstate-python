@@ -201,14 +201,23 @@ class TestHistory:
         #   });
         # });
 
+    def test_history_should_go_to_the_initial_state_when_no_history_present_explicit(
+        self, request
+    ):
+        """should go to the initial state when no history present (explicit)"""
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            history_machine.transition("off", "H_POWER").value
+        ).toEqual({"on": "first"})
+
+        # it('should go to the initial state when no history present (explicit)', () => {
+        #   expect(historyMachine.transition('off', 'H_POWER').value).toEqual({
+        #     on: 'first'
+        #   });
+        # });
+
 
 """
-  it('should go to the initial state when no history present (explicit)', () => {
-    expect(historyMachine.transition('off', 'H_POWER').value).toEqual({
-      on: 'first'
-    });
-  });
-
   it('should dispose of previous histories', () => {
     const onSecondState = historyMachine.transition('on', 'SWITCH');
     const offState = historyMachine.transition(onSecondState, 'H_POWER');
