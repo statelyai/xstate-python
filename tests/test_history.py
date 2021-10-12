@@ -130,7 +130,7 @@ class TestHistory:
     def test_history_should_go_to_the_most_recently_visited_state(self, request):
         """should go to the most recently visited state"""
         # it('should go to the most recently visited state', () => {
-        def do_this_test():
+        def test_procedure():
             #   const onSecondState = historyMachine.transition('on', 'SWITCH');
             #   const offState = historyMachine.transition(onSecondState, 'POWER');
             on_second_state = history_machine.transition("on", "SWITCH")
@@ -139,39 +139,70 @@ class TestHistory:
             return history_machine.transition(off_state, "POWER").value
 
         test = JSstyleTest()
-        test.it(pytest_func_docstring_summary(request)).expect(do_this_test()).toEqual(
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure()
+        ).toEqual(
+            #   expect(historyMachine.transition(offState, 'POWER').value).toEqual({
+            #     on: 'second'
+            {"on": "second"}
+        )
+        # """
+
+        #   it('should go to the most recently visited state', () => {
+        #     const onSecondState = historyMachine.transition('on', 'SWITCH');
+        #     const offState = historyMachine.transition(onSecondState, 'POWER');
+
+        #     expect(historyMachine.transition(offState, 'POWER').value).toEqual({
+        #       on: 'second'
+        #     });
+        #   });
+        # """
+
+    def test_history_should_go_to_the_most_recently_visited_state_explicit(
+        self, request
+    ):
+        """should go to the most recently visited state (explicit)"""
+
+        def test_procedure():
+            on_second_state = history_machine.transition("on", "SWITCH")
+            off_state = history_machine.transition(on_second_state, "H_POWER")
+            return history_machine.transition(off_state, "H_POWER").value
+
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure()
+        ).toEqual(
             #   expect(historyMachine.transition(offState, 'POWER').value).toEqual({
             #     on: 'second'
             {"on": "second"}
         )
 
+        # it('should go to the most recently visited state (explicit)', () => {
+        #   const onSecondState = historyMachine.transition('on', 'SWITCH');
+        #   const offState = historyMachine.transition(onSecondState, 'H_POWER');
+
+        #   expect(historyMachine.transition(offState, 'H_POWER').value).toEqual({
+        #     on: 'second'
+        #   });
+        # });
+
+    def test_history_should_go_to_the_initial_state_when_no_history_present(
+        self, request
+    ):
+        """should go to the initial state when no history present"""
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            history_machine.transition("off", "POWER").value
+        ).toEqual({"on": "first"})
+
+        # it('should go to the initial state when no history present', () => {
+        #   expect(historyMachine.transition('off', 'POWER').value).toEqual({
+        #     on: 'first'
+        #   });
+        # });
+
 
 """
-
-  it('should go to the most recently visited state', () => {
-    const onSecondState = historyMachine.transition('on', 'SWITCH');
-    const offState = historyMachine.transition(onSecondState, 'POWER');
-
-    expect(historyMachine.transition(offState, 'POWER').value).toEqual({
-      on: 'second'
-    });
-  });
-
-  it('should go to the most recently visited state (explicit)', () => {
-    const onSecondState = historyMachine.transition('on', 'SWITCH');
-    const offState = historyMachine.transition(onSecondState, 'H_POWER');
-
-    expect(historyMachine.transition(offState, 'H_POWER').value).toEqual({
-      on: 'second'
-    });
-  });
-
-  it('should go to the initial state when no history present', () => {
-    expect(historyMachine.transition('off', 'POWER').value).toEqual({
-      on: 'first'
-    });
-  });
-
   it('should go to the initial state when no history present (explicit)', () => {
     expect(historyMachine.transition('off', 'H_POWER').value).toEqual({
       on: 'first'
