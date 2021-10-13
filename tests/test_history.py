@@ -599,107 +599,233 @@ class TestHistoryDeepStatesHistory:
           #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
           #     on: { second: { B: 'Q' } }
 
+
+class TestParallelHistoryStates:
+    """ A set of unit tests for Parallel History States
+    """
+    history_machine = Machine(
+      """
+        { 
+          key: 'parallelhistory',
+          initial: 'off',
+          states: {
+            off: {
+              on: {
+                SWITCH: 'on', /* go to the initial states */
+                POWER: 'on.hist',
+                DEEP_POWER: 'on.deepHistory',
+                PARALLEL_HISTORY: [{ target: ['on.A.hist', 'on.K.hist'] }],
+                PARALLEL_SOME_HISTORY: [{ target: ['on.A.C', 'on.K.hist'] }],
+                PARALLEL_DEEP_HISTORY: [
+                  { target: ['on.A.deepHistory', 'on.K.deepHistory'] }
+                ]
+              }
+            },
+            on: {
+              type: 'parallel',
+              states: {
+                A: {
+                  initial: 'B',
+                  states: {
+                    B: {
+                      on: { INNER_A: 'C' }
+                    },
+                    C: {
+                      initial: 'D',
+                      states: {
+                        D: {
+                          on: { INNER_A: 'E' }
+                        },
+                        E: {}
+                      }
+                    },
+                    hist: { history: true },
+                    deepHistory: {
+                      history: 'deep'
+                    }
+                  }
+                },
+                K: {
+                  initial: 'L',
+                  states: {
+                    L: {
+                      on: { INNER_K: 'M' }
+                    },
+                    M: {
+                      initial: 'N',
+                      states: {
+                        N: {
+                          on: { INNER_K: 'O' }
+                        },
+                        O: {}
+                      }
+                    },
+                    hist: { history: true },
+                    deepHistory: {
+                      history: 'deep'
+                    }
+                  }
+                },
+                hist: {
+                  history: true
+                },
+                shallowHistory: {
+                  history: 'shallow'
+                },
+                deepHistory: {
+                  history: 'deep'
+                }
+              },
+              on: {
+                POWER: 'off'
+              }
+            }
+          }
+        }        
+      """
+    )
+    # XStateJS
+      # describe('parallel history states', () => {
+        #   const historyMachine = Machine({
+        #     key: 'parallelhistory',
+        #     initial: 'off',
+        #     states: {
+        #       off: {
+        #         on: {
+        #           SWITCH: 'on', // go to the initial states
+        #           POWER: 'on.hist',
+        #           DEEP_POWER: 'on.deepHistory',
+        #           PARALLEL_HISTORY: [{ target: ['on.A.hist', 'on.K.hist'] }],
+        #           PARALLEL_SOME_HISTORY: [{ target: ['on.A.C', 'on.K.hist'] }],
+        #           PARALLEL_DEEP_HISTORY: [
+        #             { target: ['on.A.deepHistory', 'on.K.deepHistory'] }
+        #           ]
+        #         }
+        #       },
+        #       on: {
+        #         type: 'parallel',
+        #         states: {
+        #           A: {
+        #             initial: 'B',
+        #             states: {
+        #               B: {
+        #                 on: { INNER_A: 'C' }
+        #               },
+        #               C: {
+        #                 initial: 'D',
+        #                 states: {
+        #                   D: {
+        #                     on: { INNER_A: 'E' }
+        #                   },
+        #                   E: {}
+        #                 }
+        #               },
+        #               hist: { history: true },
+        #               deepHistory: {
+        #                 history: 'deep'
+        #               }
+        #             }
+        #           },
+        #           K: {
+        #             initial: 'L',
+        #             states: {
+        #               L: {
+        #                 on: { INNER_K: 'M' }
+        #               },
+        #               M: {
+        #                 initial: 'N',
+        #                 states: {
+        #                   N: {
+        #                     on: { INNER_K: 'O' }
+        #                   },
+        #                   O: {}
+        #                 }
+        #               },
+        #               hist: { history: true },
+        #               deepHistory: {
+        #                 history: 'deep'
+        #               }
+        #             }
+        #           },
+        #           hist: {
+        #             history: true
+        #           },
+        #           shallowHistory: {
+        #             history: 'shallow'
+        #           },
+        #           deepHistory: {
+        #             history: 'deep'
+        #           }
+        #         },
+        #         on: {
+        #           POWER: 'off'
+        #         }
+        #       }
+        #     }
+        #   });
+
+class TestParallelHistoryStatesHistory:
+
+  # on.first -> on.second.A
+  stateABKL = TestParallelHistoryStates().history_machine.transition(
+    TestParallelHistoryStates().history_machine.initial_state,
+    'SWITCH'
+  )
+  # INNER_A twice
+  stateACDKL = TestParallelHistoryStates().history_machine.transition(stateABKL, 'INNER_A')
+  stateACEKL = TestParallelHistoryStates().history_machine.transition(stateACDKL, 'INNER_A')
+
+  #  INNER_K twice
+  stateACEKMN = TestParallelHistoryStates().history_machine.transition(stateACEKL, 'INNER_K')
+  stateACEKMO = TestParallelHistoryStates().history_machine.transition(stateACEKMN, 'INNER_K')
+
+  # XStateJS
+    # describe('history', () => {
+      #   // on.first -> on.second.A
+      #   const stateABKL = historyMachine.transition(
+      #     historyMachine.initialState,
+      #     'SWITCH'
+      #   );
+      #   // INNER_A twice
+      #   const stateACDKL = historyMachine.transition(stateABKL, 'INNER_A');
+      #   const stateACEKL = historyMachine.transition(stateACDKL, 'INNER_A');
+
+      #   // INNER_K twice
+      #   const stateACEKMN = historyMachine.transition(stateACEKL, 'INNER_K');
+      #   const stateACEKMO = historyMachine.transition(stateACEKMN, 'INNER_K');
+
+
+  # @pytest.mark.skip(reason="")
+  def test_should_ignore_parallel_state_history(self, request):
+      """should ignore parallel state history"""
+
+      def test_procedure(self):
+        # on.second.B.P -> off
+
+
+        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACDKL, 'POWER')
+        test_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'POWER').value
+
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({'on': { 'A': 'B', 'K': 'L' }})
+      # XStateJS
+        # it('should ignore parallel state history', () => {
+        #   const stateOff = historyMachine.transition(stateACDKL, 'POWER');
+        #   expect(historyMachine.transition(stateOff, 'POWER').value).toEqual({
+        #     on: { A: 'B', K: 'L' }
+        #   });
+        # });
+
+
+
 """
 
-describe('parallel history states', () => {
-  const historyMachine = Machine({
-    key: 'parallelhistory',
-    initial: 'off',
-    states: {
-      off: {
-        on: {
-          SWITCH: 'on', // go to the initial states
-          POWER: 'on.hist',
-          DEEP_POWER: 'on.deepHistory',
-          PARALLEL_HISTORY: [{ target: ['on.A.hist', 'on.K.hist'] }],
-          PARALLEL_SOME_HISTORY: [{ target: ['on.A.C', 'on.K.hist'] }],
-          PARALLEL_DEEP_HISTORY: [
-            { target: ['on.A.deepHistory', 'on.K.deepHistory'] }
-          ]
-        }
-      },
-      on: {
-        type: 'parallel',
-        states: {
-          A: {
-            initial: 'B',
-            states: {
-              B: {
-                on: { INNER_A: 'C' }
-              },
-              C: {
-                initial: 'D',
-                states: {
-                  D: {
-                    on: { INNER_A: 'E' }
-                  },
-                  E: {}
-                }
-              },
-              hist: { history: true },
-              deepHistory: {
-                history: 'deep'
-              }
-            }
-          },
-          K: {
-            initial: 'L',
-            states: {
-              L: {
-                on: { INNER_K: 'M' }
-              },
-              M: {
-                initial: 'N',
-                states: {
-                  N: {
-                    on: { INNER_K: 'O' }
-                  },
-                  O: {}
-                }
-              },
-              hist: { history: true },
-              deepHistory: {
-                history: 'deep'
-              }
-            }
-          },
-          hist: {
-            history: true
-          },
-          shallowHistory: {
-            history: 'shallow'
-          },
-          deepHistory: {
-            history: 'deep'
-          }
-        },
-        on: {
-          POWER: 'off'
-        }
-      }
-    }
-  });
 
-  describe('history', () => {
-    // on.first -> on.second.A
-    const stateABKL = historyMachine.transition(
-      historyMachine.initialState,
-      'SWITCH'
-    );
-    // INNER_A twice
-    const stateACDKL = historyMachine.transition(stateABKL, 'INNER_A');
-    const stateACEKL = historyMachine.transition(stateACDKL, 'INNER_A');
 
-    // INNER_K twice
-    const stateACEKMN = historyMachine.transition(stateACEKL, 'INNER_K');
-    const stateACEKMO = historyMachine.transition(stateACEKMN, 'INNER_K');
-
-    it('should ignore parallel state history', () => {
-      const stateOff = historyMachine.transition(stateACDKL, 'POWER');
-      expect(historyMachine.transition(stateOff, 'POWER').value).toEqual({
-        on: { A: 'B', K: 'L' }
-      });
-    });
 
     it('should remember first level state history', () => {
       const stateOff = historyMachine.transition(stateACDKL, 'POWER');
