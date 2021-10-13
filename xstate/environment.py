@@ -9,3 +9,7 @@ WILDCARD = os.getenv("WILDCARD", "*")
 
 NULL_EVENT = ""
 STATE_IDENTIFIER = os.getenv("STATE_IDENTIFIER", "#")
+
+
+def PYTEST_CURRENT_TEST():
+    return os.getenv("PYTEST_CURRENT_TEST", False)

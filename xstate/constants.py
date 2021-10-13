@@ -14,3 +14,5 @@ DEFAULT_GUARD_TYPE = "xstate.guard"
 
 # export const TARGETLESS_KEY = '';
 TARGETLESS_KEY = ""
+
+UNSUPPORTED_EVENTS = ["always"]

@@ -67,11 +67,13 @@ class Transition:
 
     @property
     def target(self) -> List["StateNode"]:
-        if isinstance(self.config, str):
+        if isinstance(self.config, str) and not algorithm.is_state_id(self.config):
             return self.source.parent.get_from_relative_path(
                 algorithm.to_state_path(self.config)
             )
             # return [self.source._get_relative(self.config)]
+        elif isinstance(self.config, str) and algorithm.is_state_id(self.config):
+            return [self.source.machine.root.get_state_node(self.config)]
         elif isinstance(self.config, dict):
             if isinstance(self.config["target"], str):
                 return [self.source._get_relative(self.config["target"])]
@@ -81,11 +83,21 @@ class Transition:
             return [self.config] if self.config else []
 
     def target_consider_history(self, current_state: StateValue) -> List["StateNode"]:
-        if isinstance(self.config, str):
+        # if isinstance(self.config, str):
+        #     return self.source.parent.get_from_relative_path(
+        #         algorithm.to_state_path(self.config), current_state.history_value
+        #     )
+        if isinstance(self.config, str) and not algorithm.is_state_id(self.config):
             return self.source.parent.get_from_relative_path(
                 algorithm.to_state_path(self.config), current_state.history_value
             )
-
+            # return [self.source._get_relative(self.config)]
+        elif isinstance(self.config, str) and algorithm.is_state_id(self.config):
+            return [
+                self.source.machine.root.get_state_node(
+                    self.config, current_state.history_value
+                )
+            ]
         # TODO: WIP finish testing the following implementing history
         # elif True:
         #     assert False, "Still have to implement history for config is  dict or other"

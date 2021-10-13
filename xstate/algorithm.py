@@ -27,7 +27,7 @@ from typing import (
 # TODO: why does this cause pytest to fail, ImportError: cannot import name 'get_state_value' from 'xstate.algorithm'
 # Workaround: supress import and in `get_configuration_from_state` put state: [Dict,str]
 # from xstate.state import StateType
-
+from xstate.environment import IS_PRODUCTION, WILDCARD, STATE_IDENTIFIER, NULL_EVENT
 
 from xstate.constants import (
     STATE_DELIMITER,
@@ -289,7 +289,8 @@ def get_children(state_node: StateNode) -> List[StateNode]:
 
 # export const isLeafNode = (stateNode: StateNode<any, any, any, any>) =>
 #   stateNode.type === 'atomic' || stateNode.type === 'final';
-
+def is_state_id(state_id: str) -> bool:
+    return state_id[0] == STATE_IDENTIFIER
 
 def is_leaf_node(state_node: StateNode) -> bool:
     return state_node.type == "atomic" or state_node.type == "final"

@@ -12,6 +12,7 @@ from xstate import transition
 from xstate.constants import (
     STATE_DELIMITER,
     TARGETLESS_KEY,
+    UNSUPPORTED_EVENTS,
 )
 from xstate.types import (
     TransitionConfig,
@@ -34,6 +35,7 @@ from xstate.algorithm import (
     to_array_strict,
     to_state_value,
     to_state_paths,
+    is_state_id,
     is_machine,
     is_leaf_node,
     is_in_final_state,
@@ -45,7 +47,13 @@ from xstate.algorithm import (
 
 from xstate.action import done_invoke, to_action_objects
 
-from xstate.environment import IS_PRODUCTION, WILDCARD, STATE_IDENTIFIER, NULL_EVENT
+from xstate.environment import (
+    IS_PRODUCTION,
+    WILDCARD,
+    STATE_IDENTIFIER,
+    NULL_EVENT,
+    PYTEST_CURRENT_TEST,
+)
 
 if TYPE_CHECKING:
     from xstate.machine import Machine
@@ -53,10 +61,6 @@ if TYPE_CHECKING:
 
 
 from xstate.state import State
-
-
-def is_state_id(state_id: str) -> bool:
-    return state_id[0] == STATE_IDENTIFIER
 
 
 # TODO TD implement __cache possibly in dataclass
@@ -359,6 +363,15 @@ class StateNode:
         }
         self.on = {}
         self.transitions = []
+
+        # TODO: add support for events such as `always`
+        unsupported_events = set(UNSUPPORTED_EVENTS).intersection(set(config.keys()))
+        if unsupported_events != set():
+            msg = f"XState, unsupported Event/s:{unsupported_events} found in config for StateNode ID:{self.id}"
+            logger.error(msg)
+            if IS_PRODUCTION or PYTEST_CURRENT_TEST():
+                raise Exception(msg)
+
         for k, v in config.get("on", {}).items():
             self.on[k] = []
             transition_configs = v if isinstance(v, list) else [v]
@@ -565,7 +578,7 @@ class StateNode:
         """
         #     var resolvedStateId = isStateId(stateId) ? stateId.slice(STATE_IDENTIFIER.length) : stateId;
         resolved_state_id = (
-            state_id[len(STATE_IDENTIFIER)] if is_state_id(state_id) else state_id
+            state_id[len(STATE_IDENTIFIER) :] if is_state_id(state_id) else state_id
         )
 
         #     if (resolvedStateId === this.id) {
@@ -1074,7 +1087,9 @@ class StateNode:
             child_state_path, history_value
         )
 
-    def get_state_node(self, state_key: str) -> StateNode:
+    def get_state_node(
+        self, state_key: str, history_value: HistoryValue = None
+    ) -> StateNode:
         #   public getStateNode(
         #     stateKey: string
         #   ): StateNode<TContext, any, TEvent, TTypestate> {
@@ -1089,9 +1104,14 @@ class StateNode:
         Returns:
             StateNode: Returns the child state node from its relative `stateKey`, or throws.
         """
+        if history_value is None:
+            # TODO P1, fully implement  what may be required to handle history
+            logger.error(
+                f"WIP implementing history - get_state_node is not handling history:{history_value}"
+            )
         #     if (isStateId(stateKey)) {
         if is_state_id(state_key):
-            return self.machine.get_state_node_by_id(state_key)
+            return self.machine.root.get_state_node_by_id(state_key)
         #     }
 
         #     if (!this.states) {
