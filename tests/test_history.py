@@ -124,8 +124,9 @@ describe('history states', () => {
 """
 
 
-class TestHistory:
-    """ """
+class TestHistoryInitial:
+    """ An initial set of unit tests of History capability
+    """
 
     def test_history_should_go_to_the_most_recently_visited_state(self, request):
         """should go to the most recently visited state"""
@@ -418,88 +419,187 @@ class TestHistory:
           # });
 
 
-"""
-
-
-describe('deep history states', () => {
-  const historyMachine = Machine({
-    key: 'history',
-    initial: 'off',
-    states: {
-      off: {
-        on: {
-          POWER: 'on.history',
-          DEEP_POWER: 'on.deepHistory'
-        }
-      },
-      on: {
-        initial: 'first',
-        states: {
-          first: {
-            on: { SWITCH: 'second' }
-          },
-          second: {
-            initial: 'A',
-            states: {
-              A: {
-                on: { INNER: 'B' }
-              },
-              B: {
-                initial: 'P',
-                states: {
-                  P: {
-                    on: { INNER: 'Q' }
-                  },
-                  Q: {}
+class TestHistoryDeepStates:
+    """ A set of unit tests of Deep History States
+    """
+    history_machine = Machine(
+      """
+        { 
+          key: 'history',
+          initial: 'off',
+          states: {
+            off: {
+              on: {
+                POWER: 'on.history',
+                DEEP_POWER: 'on.deepHistory'
+              }
+            },
+            on: {
+              initial: 'first',
+              states: {
+                first: {
+                  on: { SWITCH: 'second' }
+                },
+                second: {
+                  initial: 'A',
+                  states: {
+                    A: {
+                      on: { INNER: 'B' }
+                    },
+                    B: {
+                      initial: 'P',
+                      states: {
+                        P: {
+                          on: { INNER: 'Q' }
+                        },
+                        Q: {}
+                      }
+                    }
+                  }
+                },
+                history: { history: 'shallow' },
+                deepHistory: {
+                  history: 'deep'
                 }
+              },
+              on: {
+                POWER: 'off'
               }
             }
-          },
-          history: { history: 'shallow' },
-          deepHistory: {
-            history: 'deep'
           }
-        },
-        on: {
-          POWER: 'off'
-        }
-      }
-    }
-  });
+        }        
+      """
+    )
+    # XStateJS
+      # describe('deep history states', () => {
+      #   const historyMachine = Machine({
+      #     key: 'history',
+      #     initial: 'off',
+      #     states: {
+      #       off: {
+      #         on: {
+      #           POWER: 'on.history',
+      #           DEEP_POWER: 'on.deepHistory'
+      #         }
+      #       },
+      #       on: {
+      #         initial: 'first',
+      #         states: {
+      #           first: {
+      #             on: { SWITCH: 'second' }
+      #           },
+      #           second: {
+      #             initial: 'A',
+      #             states: {
+      #               A: {
+      #                 on: { INNER: 'B' }
+      #               },
+      #               B: {
+      #                 initial: 'P',
+      #                 states: {
+      #                   P: {
+      #                     on: { INNER: 'Q' }
+      #                   },
+      #                   Q: {}
+      #                 }
+      #               }
+      #             }
+      #           },
+      #           history: { history: 'shallow' },
+      #           deepHistory: {
+      #             history: 'deep'
+      #           }
+      #         },
+      #         on: {
+      #           POWER: 'off'
+      #         }
+      #       }
+      #     }
+      #   });
 
-  describe('history', () => {
-    // on.first -> on.second.A
-    const state2A = historyMachine.transition({ on: 'first' }, 'SWITCH');
-    // on.second.A -> on.second.B.P
-    const state2BP = historyMachine.transition(state2A, 'INNER');
-    // on.second.B.P -> on.second.B.Q
-    const state2BQ = historyMachine.transition(state2BP, 'INNER');
+class TestHistoryDeepStatesHistory:
+  # on.first -> on.second.A
+  state2A = TestHistoryDeepStates().history_machine.transition(
+    # { 'on': 'first' },
+    'on.first',
+    'SWITCH')
+  # on.second.A -> on.second.B.P
+  state2BP = TestHistoryDeepStates().history_machine.transition(state2A, 'INNER')
+  # on.second.B.P -> on.second.B.Q
+  state2BQ = TestHistoryDeepStates().history_machine.transition(state2BP, 'INNER')
+  # XStateJS
+  #   describe('history', () => {   
+  #   // on.first -> on.second.A
+  #   const state2A = historyMachine.transition({ on: 'first' }, 'SWITCH');
+  #   // on.second.A -> on.second.B.P
+  #   const state2BP = historyMachine.transition(state2A, 'INNER');
+  #   // on.second.B.P -> on.second.B.Q
+  #   const state2BQ = historyMachine.transition(state2BP, 'INNER');
 
-    it('should go to the shallow history', () => {
-      // on.second.B.P -> off
-      const stateOff = historyMachine.transition(state2BP, 'POWER');
-      expect(historyMachine.transition(stateOff, 'POWER').value).toEqual({
-        on: { second: 'A' }
-      });
-    });
+  # @pytest.mark.skip(reason="")
+  def test_history_should_go_to_the_shallow_history(self, request):
+      """should go to the shallow history"""
 
-    it('should go to the deep history (explicit)', () => {
-      // on.second.B.P -> off
-      const stateOff = historyMachine.transition(state2BP, 'POWER');
-      expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
-        on: { second: { B: 'P' } }
-      });
-    });
+      def test_procedure(self):
+        # on.second.B.P -> off
+        stateOff = TestHistoryDeepStates.history_machine.transition(self.state2BP, 'POWER')
+        test_result = TestHistoryDeepStates.history_machine.transition(stateOff, 'POWER').value
+        return test_result
 
-    it('should go to the deepest history', () => {
-      // on.second.B.Q -> off
-      const stateOff = historyMachine.transition(state2BQ, 'POWER');
-      expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
-        on: { second: { B: 'Q' } }
-      });
-    });
-  });
-});
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({ 'second': 'A' })
+      # XStateJS
+        # it('should go to the shallow history', () => {
+        #   // on.second.B.P -> off
+        #   const stateOff = historyMachine.transition(state2BP, 'POWER');
+        #   expect(historyMachine.transition(stateOff, 'POWER').value).toEqual({
+        #     on: { second: 'A' }
+
+  # @pytest.mark.skip(reason="")
+  def test_history_should_go_to_the_deep_history_explicit(self, request):
+      """should go to the deep history (explicit)"""
+
+      def test_procedure(self):
+        # on.second.B.P -> off
+        stateOff = TestHistoryDeepStates.history_machine.transition(self.state2BP, 'POWER')
+        test_result = TestHistoryDeepStates.history_machine.transition(stateOff, 'DEEP_POWER').value
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({ 'B': 'P' })
+      # XStateJS
+        # it('should go to the deep history (explicit)', () => {
+          #   // on.second.B.P -> off
+          #   const stateOff = historyMachine.transition(state2BP, 'POWER');
+          #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
+          #     on: { second: { B: 'P' } }
+
+  # @pytest.mark.skip(reason="")
+  def test_history_should_go_to_the_deepest_history(self, request):
+      """should go to the deepest history"""
+
+      def test_procedure(self):
+        # on.second.B.Q -> off
+        stateOff = TestHistoryDeepStates.history_machine.transition(self.state2BQ, 'POWER')
+        test_result = TestHistoryDeepStates.history_machine.transition(stateOff, 'DEEP_POWER').value
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({ 'B': 'Q' })
+      # XStateJS
+        # it('should go to the deepest history', () => {
+          #   // on.second.B.Q -> off
+          #   const stateOff = historyMachine.transition(state2BQ, 'POWER');
+          #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
+          #     on: { second: { B: 'Q' } }
+
+"""
 
 describe('parallel history states', () => {
   const historyMachine = Machine({
