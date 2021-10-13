@@ -240,59 +240,186 @@ class TestHistory:
     #   const nextState = historyMachine.transition(onState, 'H_POWER');
     #   expect(nextState.history!.history).not.toBeDefined();
     # });
+    @pytest.mark.skip(reason="Eventless Transition `Always`, not yet implemented")
+    def test_history_should_go_to_the_most_recently_visited_state_by_a_transient_transition_non_interpreter(self, request):
+        """should go to the most recently visited state by a transient transition
+
+          The on event `DESTROY` the state `destroy` should automatically ie `always` proceed to `idle.absent`
+        """
+
+        def test_procedure():
+          machine = Machine(
+            """
+            {
+              initial: 'idle',
+              states: {
+                idle: {
+                  id: 'idle',
+                  initial: 'absent',
+                  states: {
+                    absent: {
+                      on: {
+                        DEPLOY: '#deploy'
+                      }
+                    },
+                    present: {
+                      on: {
+                        DEPLOY: '#deploy',
+                        DESTROY: '#destroy'
+                      }
+                    },
+                    hist: {
+                      type: 'history'
+                    }
+                  }
+                },
+                deploy: {
+                  id: 'deploy',
+                  on: {
+                    SUCCESS: 'idle.present',
+                    FAILURE: 'idle.hist'
+                  }
+                },
+                destroy: {
+                  id: 'destroy',
+                  always: [{ target: 'idle.absent' }]
+                }
+              }
+            }          
+            """
+          )
+          initial_state = machine.initial_state
+          # service.send('DEPLOY');
+          next_state= machine.transition(initial_state,"DEPLOY")
+          # service.send('SUCCESS');
+          next_state= machine.transition(next_state,"SUCCESS")
+          # service.send('DESTROY');
+          next_state= machine.transition(next_state,"DESTROY")
+          # service.send('DEPLOY');
+          next_state= machine.transition(next_state,"DEPLOY")
+          # service.send('FAILURE');
+          next_state= machine.transition(next_state,"FAILURE")
+          test_result = next_state.state.value
+          return test_result
+
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure()
+        ).toEqual({ 'idle': 'absent' })
+
+    @pytest.mark.skip(reason="interpreter, not yet implemented")
+    def test_history_should_go_to_the_most_recently_visited_state_by_a_transient_transition(self, request):
+        """should go to the most recently visited state by a transient transition"""
+
+        def test_procedure():
+          machine = Machine(
+            """
+            {
+              initial: 'idle',
+              states: {
+                idle: {
+                  id: 'idle',
+                  initial: 'absent',
+                  states: {
+                    absent: {
+                      on: {
+                        DEPLOY: '#deploy'
+                      }
+                    },
+                    present: {
+                      on: {
+                        DEPLOY: '#deploy',
+                        DESTROY: '#destroy'
+                      }
+                    },
+                    hist: {
+                      type: 'history'
+                    }
+                  }
+                },
+                deploy: {
+                  id: 'deploy',
+                  on: {
+                    SUCCESS: 'idle.present',
+                    FAILURE: 'idle.hist'
+                  }
+                },
+                destroy: {
+                  id: 'destroy',
+                  always: [{ target: 'idle.absent' }]
+                }
+              }
+            }          
+            """
+          )
+          service = interpret(machine).start();
+
+          service.send('DEPLOY');
+          service.send('SUCCESS');
+          service.send('DESTROY');
+          service.send('DEPLOY');
+          service.send('FAILURE');
+          test_result = service.state.value
+          return test_result
+
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure()
+        ).toEqual({ 'idle': 'absent' })
+        # XStateJS
+          #   it('should go to the most recently visited state by a transient transition', () => {
+            #     const machine = createMachine({
+            #       initial: 'idle',
+            #       states: {
+            #         idle: {
+            #           id: 'idle',
+            #           initial: 'absent',
+            #           states: {
+            #             absent: {
+            #               on: {
+            #                 DEPLOY: '#deploy'
+            #               }
+            #             },
+            #             present: {
+            #               on: {
+            #                 DEPLOY: '#deploy',
+            #                 DESTROY: '#destroy'
+            #               }
+            #             },
+            #             hist: {
+            #               type: 'history'
+            #             }
+            #           }
+            #         },
+            #         deploy: {
+            #           id: 'deploy',
+            #           on: {
+            #             SUCCESS: 'idle.present',
+            #             FAILURE: 'idle.hist'
+            #           }
+            #         },
+            #         destroy: {
+            #           id: 'destroy',
+            #           always: [{ target: 'idle.absent' }]
+            #         }
+            #       }
+            #     });
+
+          #     const service = interpret(machine).start();
+
+          #     service.send('DEPLOY');
+          #     service.send('SUCCESS');
+          #     service.send('DESTROY');
+          #     service.send('DEPLOY');
+          #     service.send('FAILURE');
+
+          #     expect(service.state.value).toEqual({ idle: 'absent' });
+          #   });
+          # });
 
 
 """
 
-  it('should go to the most recently visited state by a transient transition', () => {
-    const machine = createMachine({
-      initial: 'idle',
-      states: {
-        idle: {
-          id: 'idle',
-          initial: 'absent',
-          states: {
-            absent: {
-              on: {
-                DEPLOY: '#deploy'
-              }
-            },
-            present: {
-              on: {
-                DEPLOY: '#deploy',
-                DESTROY: '#destroy'
-              }
-            },
-            hist: {
-              type: 'history'
-            }
-          }
-        },
-        deploy: {
-          id: 'deploy',
-          on: {
-            SUCCESS: 'idle.present',
-            FAILURE: 'idle.hist'
-          }
-        },
-        destroy: {
-          id: 'destroy',
-          always: [{ target: 'idle.absent' }]
-        }
-      }
-    });
-
-    const service = interpret(machine).start();
-
-    service.send('DEPLOY');
-    service.send('SUCCESS');
-    service.send('DESTROY');
-    service.send('DEPLOY');
-    service.send('FAILURE');
-
-    expect(service.state.value).toEqual({ idle: 'absent' });
-  });
-});
 
 describe('deep history states', () => {
   const historyMachine = Machine({
