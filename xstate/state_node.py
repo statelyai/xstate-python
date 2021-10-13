@@ -960,7 +960,7 @@ class StateNode:
                 parent.get_from_relative_path(sub_state_path)
                 if self.history == "deep"
                 else [parent.states[sub_state_path[0]]]
-                for sub_state_path in to_state_paths(sub_history_value)
+                for sub_state_path in [to_state_paths(sub_history_value)]
             ]
         )
 

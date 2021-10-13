@@ -1127,18 +1127,18 @@ def to_state_paths(state_value: Union[StateValue, None]) -> List[str]:
         #         return [[key]];
         #       }
         if not isinstance(sub_state_value, str) and (
-            sub_state_value is not None or not len(sub_state_value) > 0
+            sub_state_value is  None or not len(sub_state_value) > 0
         ):
             return [[key]]
 
         #       return toStatePaths(stateValue[key]).map((subPath) => {
         #         return [key].concat(subPath);
         #       });
-        return [[key].extend(sub_path) for sub_path in to_state_paths(state_value[key])]
+        return [[key] ]+[sub_path for sub_path in to_state_paths(state_value[key])]
         #     })
         #   );
-
-    result = flatten([map_function(key) for key in state_value.keys()])
+    #TODO: TD why must the map_funct compression be subscripted with [0]
+    result = flatten([map_function(key) for key in state_value.keys()][0])
 
     #   return result;
     return result
@@ -1261,7 +1261,7 @@ def get_value_from_adj(state_node: StateNode, adj_list: Dict[str, Set[StateNode]
     child_state_nodes = adj_list.get(state_node.id)
 
     if is_compound_state(state_node):
-        child_state_node = list(child_state_nodes)[0]
+        child_state_node = list(child_state_nodes)[0] if child_state_nodes != set() else None
 
         if child_state_node:
             if is_atomic_state(child_state_node):

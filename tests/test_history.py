@@ -457,8 +457,8 @@ class TestHistoryDeepStates:
                     }
                   }
                 },
-                history: { history: 'shallow' },
-                deepHistory: {
+                history: { type: 'history', history: 'shallow' },
+                deepHistory: {type: 'history',
                   history: 'deep'
                 }
               },
@@ -549,7 +549,7 @@ class TestHistoryDeepStatesHistory:
       test = JSstyleTest()
       test.it(pytest_func_docstring_summary(request)).expect(
           test_procedure(self)
-      ).toEqual({ 'second': 'A' })
+      ).toEqual({'on':{ 'second': 'A' }})
       # XStateJS
         # it('should go to the shallow history', () => {
         #   // on.second.B.P -> off
@@ -570,7 +570,7 @@ class TestHistoryDeepStatesHistory:
       test = JSstyleTest()
       test.it(pytest_func_docstring_summary(request)).expect(
           test_procedure(self)
-      ).toEqual({ 'B': 'P' })
+      ).toEqual({ 'on': { 'second': { 'B': 'P' }} })
       # XStateJS
         # it('should go to the deep history (explicit)', () => {
           #   // on.second.B.P -> off
@@ -591,7 +591,7 @@ class TestHistoryDeepStatesHistory:
       test = JSstyleTest()
       test.it(pytest_func_docstring_summary(request)).expect(
           test_procedure(self)
-      ).toEqual({ 'B': 'Q' })
+      ).toEqual({ 'on': { 'second': { 'B': 'Q' }} })
       # XStateJS
         # it('should go to the deepest history', () => {
           #   // on.second.B.Q -> off

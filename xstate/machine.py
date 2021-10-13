@@ -83,6 +83,7 @@ class Machine:
             # currentState = state if   context is None else  self.resolve_state(State.from(state, context)
             current_state = state
         elif isinstance(state, dict):
+            # TODO current state should be resolved to a StateType, see errors TestHistoryDeepStatesHistory
             current_state = state
         # else {
         else:
@@ -146,6 +147,7 @@ class Machine:
             context={},
             actions=actions,
             transitions=transitions,
+            value=resolved_state_value,
             # historyValue: resolvedStateValue
             #     ? historyValue
             #     ? updateHistoryValue(historyValue, resolvedStateValue)

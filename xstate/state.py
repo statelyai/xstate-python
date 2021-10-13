@@ -43,7 +43,7 @@ class State:
     def __init__(
         self,
         configuration: Set["StateNode"],
-        context: Dict[str, Any],
+        context: Dict[str, Any] = {},
         actions: List["Action"] = [],
         **kwargs,
     ):
