@@ -84,7 +84,14 @@ class Machine:
             current_state = state
         elif isinstance(state, dict):
             # TODO current state should be resolved to a StateType, see errors TestHistoryDeepStatesHistory
-            current_state = state
+            resolved_state_value = self.root.resolve(state)
+            # resolved_context = context if context else self.machine.context
+            current_state = self.root.resolve_state(
+                State._from(
+                    resolved_state_value,
+                    # resolved_context,
+                )
+            )
         # else {
         else:
             #     var resolvedStateValue = utils_1.isString(state)
