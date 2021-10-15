@@ -81,5 +81,7 @@ class JSstyleTest:
 
     def toEqual(self, test):
         self.result = self.operation == test
-        assert self.result, self.message
+        assert (
+            self.result
+        ), f"{self.message}, test value:{self.operation}, should be:{test}"
         return self
