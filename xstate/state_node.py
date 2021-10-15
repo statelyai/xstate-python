@@ -450,7 +450,7 @@ class StateNode:
             #           }
             #         );
 
-            def func1(sub_state_value, sub_state_key):
+            def func1(sub_state_value, sub_state_key, *args):
                 return (
                     self.get_state_node(sub_state_key).resolve(
                         state_value.get(sub_state_key, sub_state_value)
@@ -917,7 +917,7 @@ class StateNode:
         #           )
         #         : parent.initialStateNodes;
         #     }
-        if not history_value:
+        if not history_value or history_value == HistoryValue():
             history_target = self.target
             return (
                 flatten(
@@ -934,10 +934,8 @@ class StateNode:
         #       parent.path,
         #       'states'
         #     )(historyValue).current;
-
-        sub_history_value = nested_path(parent.path, "states")(
-            history_value.__dict__
-        ).current
+        sub_history_object = nested_path(parent.path, "states")(history_value.__dict__)
+        sub_history_value = sub_history_object.current if sub_history_object else None
 
         #     if (isString(subHistoryValue)) {
         #       return [parent.getStateNode(subHistoryValue)];
