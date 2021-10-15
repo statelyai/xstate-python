@@ -145,7 +145,7 @@ class State:
     #     stateValue: State<TC, TE, any, any> | StateValue,
     #     context?: TC | undefined
     #   ): State<TC, TE, any, any> {
-    def _from(state_value: Union[State, StateValue], context: Any) -> State:
+    def _from(state_value: Union[State, StateValue], context: Any = None) -> State:
         """Creates a new State instance for the given `stateValue` and `context`.
 
         Args:
