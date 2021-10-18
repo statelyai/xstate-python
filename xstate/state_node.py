@@ -385,8 +385,8 @@ class StateNode:
                 )
                 self.on[k].append(transition)
                 self.transitions.append(transition)
-
-        self.type = config.get("type")
+        # handle the case where a history node often does not have a type specified
+        self.type = config.get("type") if not self.history else "history"
 
         if self.type is None:
             self.type = "atomic" if not self.states else "compound"
@@ -958,7 +958,7 @@ class StateNode:
                 parent.get_from_relative_path(sub_state_path)
                 if self.history == "deep"
                 else [parent.states[sub_state_path[0]]]
-                for sub_state_path in [to_state_paths(sub_history_value)]
+                for sub_state_path in to_state_paths(sub_history_value)
             ]
         )
 
@@ -966,7 +966,8 @@ class StateNode:
         if target.startswith("#"):
             return self.machine._get_by_id(target[1:])
 
-        state_node = self.parent.states.get(target)
+        # state_node = self.parent.states.get(target)
+        state_node = self.parent.get_from_relative_path(to_state_path(target))[0]
 
         if not state_node:
             raise ValueError(
