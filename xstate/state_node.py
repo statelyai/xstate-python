@@ -369,7 +369,8 @@ class StateNode:
         if unsupported_events != set():
             msg = f"XState, unsupported Event/s:{unsupported_events} found in config for StateNode ID:{self.id}"
             logger.error(msg)
-            if IS_PRODUCTION or PYTEST_CURRENT_TEST():
+            # TODO remove `True` PYTEST_CURRENT_TEST() not always working
+            if IS_PRODUCTION or PYTEST_CURRENT_TEST() or True:
                 raise Exception(msg)
 
         for k, v in config.get("on", {}).items():
@@ -576,6 +577,7 @@ class StateNode:
             StateNode: the state node with the given `state_id`, or raises exception.
 
         """
+        # TODO: P1, History, what happpens if this node is type 'history` , `resolve_history` should be called  just as in
         #     var resolvedStateId = isStateId(stateId) ? stateId.slice(STATE_IDENTIFIER.length) : stateId;
         resolved_state_id = (
             state_id[len(STATE_IDENTIFIER) :] if is_state_id(state_id) else state_id
@@ -935,7 +937,9 @@ class StateNode:
         #       'states'
         #     )(historyValue).current;
         sub_history_object = nested_path(parent.path, "states")(history_value.__dict__)
-        sub_history_value = sub_history_object.current if sub_history_object else None
+        sub_history_value = (
+            sub_history_object.get("current", None) if sub_history_object else None
+        )
 
         #     if (isString(subHistoryValue)) {
         #       return [parent.getStateNode(subHistoryValue)];
@@ -962,13 +966,29 @@ class StateNode:
             ]
         )
 
-    def _get_relative(self, target: str) -> "StateNode":
+    def _get_relative(
+        self, target: str, history_value: HistoryValue = None
+    ) -> "StateNode":
         if target.startswith("#"):
+            # TODO: P1, History, handle `history_value` for id, construct a test case
             return self.machine._get_by_id(target[1:])
 
         # state_node = self.parent.states.get(target)
-        state_node = self.parent.get_from_relative_path(to_state_path(target))[0]
+        target_path = to_state_path(target)
 
+        if target_path[0] == "":  # a relative path to self
+            state_node = self.get_from_relative_path(
+                to_state_path(target)[1:], history_value
+            )
+        else:  # presume relative to parent
+            state_node = self.parent.get_from_relative_path(
+                to_state_path(target), history_value
+            )
+        # TODO: assume only 1 item in list
+        assert (
+            len(state_node) == 1
+        ), f"Not handling {len(state_node)} targets matching, {target}"
+        state_node = state_node[0]
         if not state_node:
             raise ValueError(
                 f"Relative state node '{target}' does not exist on state node '#{self.id}'"  # noqa

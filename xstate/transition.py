@@ -83,6 +83,7 @@ class Transition:
             return [self.config] if self.config else []
 
     def target_consider_history(self, history_value: HistoryValue) -> List["StateNode"]:
+        # TODO: P2, would be desirable to amalgate `target` and `target_consider_history` however the history_value would need to be an attribute of `transition` or possibly `source` ?
         # if isinstance(self.config, str):
         #     return self.source.parent.get_from_relative_path(
         #         algorithm.to_state_path(self.config), current_state.history_value
@@ -99,15 +100,12 @@ class Transition:
         #     assert False, "Still have to implement history for config is  dict or other"
         elif isinstance(self.config, dict):
             if isinstance(self.config["target"], str):
-                return [
-                    self.source._get_relative(
-                        self.config["target"],
-                    )
-                ]
+                return [self.source._get_relative(self.config["target"], history_value)]
 
             return [
                 self.source._get_relative(
                     v,
+                    history_value,
                 )
                 for v in self.config["target"]
             ]
