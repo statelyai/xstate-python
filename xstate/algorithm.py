@@ -78,7 +78,7 @@ def compute_entry_set(
     current_state: StateValue,
 ):
     for t in transitions:
-        for s in t.target_consider_history(current_state=current_state):
+        for s in t.target_consider_history(history_value= history_value):
             add_descendent_states_to_enter(
                 s,
                 states_to_enter=states_to_enter,
@@ -106,26 +106,28 @@ def add_descendent_states_to_enter(  # noqa C901 too complex. TODO: simplify fun
     history_value: HistoryValue,
 ):
     if is_history_state(state):
-        if history_value.get(state.id):
-            for s in history_value.get(state.id):
+        if history_value.states:
+            for s in history_value.states[state.parent.key].states:
                 add_descendent_states_to_enter(
-                    s,
+                    state.parent.get_state_node(s),
                     states_to_enter=states_to_enter,
                     states_for_default_entry=states_for_default_entry,
                     default_history_content=default_history_content,
                     history_value=history_value,
                 )
-            for s in history_value.get(state.id):
+            for s in history_value.states[state.parent.key].states:
                 add_ancestor_states_to_enter(
-                    s,
-                    ancestor=s.parent,
+                    state.parent.get_state_node(s),
+                    ancestor=state.parent,
                     states_to_enter=states_to_enter,
                     states_for_default_entry=states_for_default_entry,
                     default_history_content=default_history_content,
                     history_value=history_value,
                 )
         else:
-            default_history_content[state.parent.id] = state.transition.content
+            # default_history_content[state.parent.id] = state.transition.content
+            #TODO: WIP -histoy parallel , following a workaround for implementation to resolve
+            default_history_content[state.parent.id] = None
             # for s in state.transition.target:
             #     add_descendent_states_to_enter(
             #         s,
@@ -227,7 +229,7 @@ def get_effective_target_states(
 ) -> Set[StateNode]:
     targets: Set[StateNode] = set()
 
-    for s in transition.target:
+    for s in transition.target_consider_history(history_value=history_value):
         if is_history_state(s):
             if history_value.get(s.id):
                 targets.update(history_value.get(s.id))
@@ -445,9 +447,11 @@ def exit_states(
     history_value: HistoryValue,
     actions: List[Action],
     internal_queue: List[Event],
+    current_state:State,
 ):
     states_to_exit = compute_exit_set(
-        enabled_transitions, configuration=configuration, history_value=history_value
+        enabled_transitions, configuration=configuration, history_value=history_value, 
+        # current_state=current_state,
     )
     for s in states_to_exit:
         states_to_invoke.discard(s)
@@ -474,7 +478,7 @@ def compute_exit_set(
 ) -> Set[StateNode]:
     states_to_exit: Set[StateNode] = set()
     for t in enabled_transitions:
-        if t.target:
+        if t.target_consider_history(history_value=history_value):
             domain = get_transition_domain(t, history_value=history_value)
             for s in configuration:
                 if is_descendent(s, state2=domain):
@@ -576,7 +580,7 @@ def main_event_loop(
     current_state:State
 ) -> Tuple[Set[StateNode], List[Action]]:
     states_to_invoke: Set[StateNode] = set()
-    history_value = HistoryValue()
+    history_value = current_state.history_value if current_state.history_value else HistoryValue()
     transitions = set()
     enabled_transitions = select_transitions(event=event, configuration=configuration)
     transitions = transitions.union(enabled_transitions)
@@ -670,6 +674,7 @@ def microstep(
         history_value=history_value,
         actions=actions,
         internal_queue=internal_queue,
+        current_state=current_state,
     )
 
     execute_transition_content(
@@ -1134,14 +1139,15 @@ def to_state_paths(state_value: Union[StateValue, None]) -> List[str]:
         #       return toStatePaths(stateValue[key]).map((subPath) => {
         #         return [key].concat(subPath);
         #       });
-        return [[key] ]+[sub_path for sub_path in to_state_paths(state_value[key])]
+        return [[key]+sub_path for sub_path in to_state_paths(state_value[key])]
         #     })
         #   );
-    #TODO: TD why must the map_funct compression be subscripted with [0]
-    result = flatten([map_function(key) for key in state_value.keys()][0])
+
+    result = flatten([map_function(key) for key in state_value.keys()])
 
     #   return result;
     return result
+    # return flatten(result)
     # }
 
 
@@ -1356,15 +1362,15 @@ def nested_path(
 )-> Callable: 
 #   return (object) => {
 #     let result: T = object;
-    def func(object):
+    def func_nested_path(object):
         result =object
         
         for prop in props:
-            result = result[accessorProp][prop]
+            result = result[accessorProp].get(prop, None) if result[accessorProp] else None
         
 
         return  result
-    return func
+    return func_nested_path
 
 #     for (const prop of props) {
 #       result = result[accessorProp][prop];
