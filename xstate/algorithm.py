@@ -431,7 +431,7 @@ def enter_states(
 
         #   : undefined;      
         #TODO check statein-tests where  current_state is a dict type
-        hv = s._history_value() if s._history_value() else (
+        hv = current_state.history_value if current_state and current_state.history_value else (
                         s.machine.root._history_value(current_state.value if str(type(current_state)) == "<class 'xstate.state.State'>" else None) if list(enabled_transitions)[0].source else (
                             None if s else None))
         if hv:
