@@ -934,40 +934,73 @@ class TestParallelHistoryStatesHistory:
         #   });
         # });
 
+
+
+
+class TestTransientHistory:
+
+  transientMachine = Machine(
+    """
+    {
+      initial: 'A',
+      states: {
+        A: {
+          on: { EVENT: 'B' }
+        },
+        B: {
+          /* eventless transition */
+          always: 'C'
+        },
+        C: {}
+      }
+    }
+    """
+  )
+
+    # const transientMachine = Machine({
+    #   initial: 'A',
+    #   states: {
+    #     A: {
+    #       on: { EVENT: 'B' }
+    #     },
+    #     B: {
+    #       // eventless transition
+    #       always: 'C'
+    #     },
+    #     C: {}
+    #   }
+    # });
+  
+
+  # @pytest.mark.skip(reason="")
+  def test_should_have_history_on_transient_transitions(self, request):
+      """should have history on transient transitions"""
+
+      def test_procedure(self):
+        nextState = self.transientMachine.transition('A', 'EVENT')
+        test_result = (nextState.value=='C' 
+                      and nextState.history is not None)
+
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual(True)
+      # XStateJS
+        #   it('should have history on transient transitions', () => {
+        #     const nextState = transientMachine.transition('A', 'EVENT');
+        #     expect(nextState.value).toEqual('C');
+        #     expect(nextState.history).toBeDefined();
+        #   });
+        # });
+
+
+
+
+
 """
 
-
-
-
-
-
-
-
-
-  });
-});
-
-describe('transient history', () => {
-  const transientMachine = Machine({
-    initial: 'A',
-    states: {
-      A: {
-        on: { EVENT: 'B' }
-      },
-      B: {
-        // eventless transition
-        always: 'C'
-      },
-      C: {}
-    }
-  });
-
-  it('should have history on transient transitions', () => {
-    const nextState = transientMachine.transition('A', 'EVENT');
-    expect(nextState.value).toEqual('C');
-    expect(nextState.history).toBeDefined();
-  });
-});
 
 describe('internal transition with history', () => {
   const machine = Machine({
