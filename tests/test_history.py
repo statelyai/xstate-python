@@ -457,7 +457,7 @@ class TestHistoryDeepStates:
                     }
                   }
                 },
-                history: { type: 'history', history: 'shallow' },
+                history: { history: 'shallow' },
                 deepHistory: {type: 'history',
                   history: 'deep'
                 }
@@ -820,53 +820,130 @@ class TestParallelHistoryStatesHistory:
         #   });
         # });
 
+ # @pytest.mark.skip(reason="")
+  def test_should_remember_first_level_state_history(self, request):
+      """should remember first level state history"""
 
+      def test_procedure(self):
+        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACDKL, 'POWER')
+        transition_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'DEEP_POWER')
+        test_result = transition_result.value
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({'on': { 'A':  { 'C': 'D' }, 'K': 'L' }})
+      # XStateJS
+        # it('should remember first level state history', () => {
+        #   const stateOff = historyMachine.transition(stateACDKL, 'POWER');
+        #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
+        #     on: { A: { C: 'D' }, K: 'L' }
+        #   });
+        # });
+
+ # @pytest.mark.skip(reason="")
+  def test_should_re_enter_each_regions_of_parallel_state_correctly(self, request):
+      """should re-enter each regions of parallel state correctly"""
+
+      def test_procedure(self):
+        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACEKMO, 'POWER')
+        transition_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'DEEP_POWER')
+        test_result = transition_result.value
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({'on': { 'A':  { 'C': 'E' }, 'K': { 'M': 'O' } }})
+      # XStateJS
+        # it('should re-enter each regions of parallel state correctly', () => {
+        #   const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
+        #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
+        #     on: { A: { C: 'E' }, K: { M: 'O' } }
+        #   });
+        # });
+
+  def test_should_re_enter_multiple_history_states(self, request):
+      """should re-enter multiple history states"""
+
+      def test_procedure(self):
+        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACEKMO, 'POWER')
+        transition_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'PARALLEL_HISTORY')
+        test_result = transition_result.value
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({'on': { 'A': { 'C': 'D' }, 'K': { 'M': 'N' } }})
+      # XStateJS
+        # it('should re-enter multiple history states', () => {
+        #   const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
+        #   expect(
+        #     historyMachine.transition(stateOff, 'PARALLEL_HISTORY').value
+        #   ).toEqual({
+        #     on: { A: { C: 'D' }, K: { M: 'N' } }
+        #   });
+        # });
+
+  def test_should_re_enter_a_parallel_with_partial_history(self, request):
+      """should re-enter a parallel with partial history"""
+
+      def test_procedure(self):
+        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACEKMO, 'POWER')
+        transition_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'PARALLEL_SOME_HISTORY')
+        test_result = transition_result.value
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({'on': { 'A': { 'C': 'D' }, 'K': { 'M': 'N' } }})
+      # XStateJS
+        # it('should re-enter a parallel with partial history', () => {
+        #   const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
+        #   expect(
+        #     historyMachine.transition(stateOff, 'PARALLEL_SOME_HISTORY').value
+        #   ).toEqual({
+        #     on: { A: { C: 'D' }, K: { M: 'N' } }
+        #   });
+        # });
+
+
+  def test_should_re_enter_a_parallel_with_full_history(self, request):
+      """should re-enter a parallel with full history"""
+
+      def test_procedure(self):
+        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACEKMO, 'POWER')
+        transition_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'PARALLEL_DEEP_HISTORY')
+        test_result = transition_result.value
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({'on': { 'A': { 'C': 'E' }, 'K': { 'M': 'O' } }})
+      # XStateJS
+        # it('should re-enter a parallel with full history', () => {
+        #   const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
+        #   expect(
+        #     historyMachine.transition(stateOff, 'PARALLEL_DEEP_HISTORY').value
+        #   ).toEqual({
+        #     on: { A: { C: 'E' }, K: { M: 'O' } }
+        #   });
+        # });
 
 """
 
 
 
 
-    it('should remember first level state history', () => {
-      const stateOff = historyMachine.transition(stateACDKL, 'POWER');
-      expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
-        on: { A: { C: 'D' }, K: 'L' }
-      });
-    });
 
-    it('should re-enter each regions of parallel state correctly', () => {
-      const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
-      expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
-        on: { A: { C: 'E' }, K: { M: 'O' } }
-      });
-    });
 
-    it('should re-enter multiple history states', () => {
-      const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
-      expect(
-        historyMachine.transition(stateOff, 'PARALLEL_HISTORY').value
-      ).toEqual({
-        on: { A: { C: 'D' }, K: { M: 'N' } }
-      });
-    });
 
-    it('should re-enter a parallel with partial history', () => {
-      const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
-      expect(
-        historyMachine.transition(stateOff, 'PARALLEL_SOME_HISTORY').value
-      ).toEqual({
-        on: { A: { C: 'D' }, K: { M: 'N' } }
-      });
-    });
 
-    it('should re-enter a parallel with full history', () => {
-      const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
-      expect(
-        historyMachine.transition(stateOff, 'PARALLEL_DEEP_HISTORY').value
-      ).toEqual({
-        on: { A: { C: 'E' }, K: { M: 'O' } }
-      });
-    });
+
   });
 });
 
