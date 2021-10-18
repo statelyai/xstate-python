@@ -3,7 +3,6 @@ from __future__ import (
 )  #  PEP 563:__future__.annotations will become the default in Python 3.11
 from typing import TYPE_CHECKING, Dict, List, Union
 import logging
-
 from xstate.types import HistoryValue
 
 logger = logging.getLogger(__name__)
@@ -241,7 +240,13 @@ class Machine:
 
     @property
     def initial_state(self) -> State:
-        (configuration, _actions, internal_queue, transitions) = enter_states(
+        (
+            configuration,
+            _actions,
+            internal_queue,
+            transitions,
+            history_value,
+        ) = enter_states(
             enabled_transitions=[self.root.initial_transition],
             configuration=set(),
             states_to_invoke=set(),
@@ -252,11 +257,12 @@ class Machine:
             current_state=None,
         )
 
-        (configuration, _actions, transitions) = macrostep(
+        (configuration, _actions, transitions, history_value) = macrostep(
             configuration=configuration,
             actions=_actions,
             internal_queue=internal_queue,
             transitions=transitions,
+            history_value=history_value,
         )
 
         actions, warnings = self._get_actions(_actions)
@@ -268,4 +274,5 @@ class Machine:
             context={},
             actions=actions,
             transitions=transitions,
+            history_value=history_value,
         )

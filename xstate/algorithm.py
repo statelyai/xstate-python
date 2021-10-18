@@ -435,9 +435,8 @@ def enter_states(
                         s.machine.root._history_value(current_state.value if str(type(current_state)) == "<class 'xstate.state.State'>" else None) if list(enabled_transitions)[0].source else (
                             None if s else None))
         if hv:
-            history_value.update(hv.__dict__)
-
-    return (configuration, actions, internal_queue, transitions)
+            history_value=HistoryValue(**hv.__dict__)
+    return (configuration, actions, internal_queue, transitions,history_value)
 
 
 def exit_states(
@@ -584,7 +583,7 @@ def main_event_loop(
     transitions = set()
     enabled_transitions = select_transitions(event=event, configuration=configuration)
     transitions = transitions.union(enabled_transitions)
-    (configuration, actions, internal_queue, transitions) = microstep(
+    (configuration, actions, internal_queue, transitions,history_value) = microstep(
         enabled_transitions,
         configuration=configuration,
         states_to_invoke=states_to_invoke,
@@ -593,12 +592,13 @@ def main_event_loop(
         current_state=current_state
     )
 
-    (configuration, actions, transitions) = macrostep(
+    (configuration, actions, transitions,history_value) = macrostep(
         configuration=configuration,
         actions=actions,
         internal_queue=internal_queue,
         transitions=transitions,
         current_state=current_state,
+        history_value=history_value,
     )
 
     return (configuration, actions, transitions,history_value)
@@ -610,6 +610,7 @@ def macrostep(
     internal_queue: List[Event],
     transitions: List[Transition],
     current_state: State=None,
+    history_value: HistoryValue=HistoryValue()
 ) -> Tuple[Set[StateNode], List[Action]]:
     enabled_transitions = set()
     macrostep_done = False
@@ -627,16 +628,16 @@ def macrostep(
                     configuration=configuration,
                 )
         if enabled_transitions:
-            (configuration, actions, internal_queue, transitions) = microstep(
+            (configuration, actions, internal_queue, transitions,history_value) = microstep(
                 enabled_transitions=enabled_transitions,
                 configuration=configuration,
                 states_to_invoke=set(),  # TODO
-                history_value={},  # TODO
+                history_value=history_value,  # TODO
                 transitions=transitions,
                 current_state=current_state,
             )
 
-    return (configuration, actions, transitions)
+    return (configuration, actions, transitions,history_value)
 
 
 def execute_transition_content(
@@ -681,7 +682,7 @@ def microstep(
         enabled_transitions, actions=actions, internal_queue=internal_queue
     )
 
-    enter_states(
+    _,_,_,_,history_value=enter_states(
         enabled_transitions,
         configuration=configuration,
         states_to_invoke=states_to_invoke,
@@ -692,7 +693,7 @@ def microstep(
         current_state=current_state,
     )
 
-    return (configuration, actions, internal_queue, transitions)
+    return (configuration, actions, internal_queue, transitions,history_value)
 
 
 def is_machine(value):
@@ -1366,7 +1367,7 @@ def nested_path(
         result =object
         
         for prop in props:
-            result = result[accessorProp].get(prop, None) if result[accessorProp] else None
+            result = result[accessorProp].get(prop, None).__dict__ if result[accessorProp] else None
         
 
         return  result
@@ -1439,7 +1440,7 @@ def update_history_states(hist:HistoryValue, state_value)->Dict:
         if not sub_state_value:
             return None
 
-        return sub_hist.update( {
+        return HistoryValue( **{
             "current": sub_state_value,
             "states": update_history_states(sub_hist, sub_state_value),
         })
@@ -1457,6 +1458,6 @@ def update_history_states(hist:HistoryValue, state_value)->Dict:
 # }
 
 def update_history_value(hist, state_value):
-    return hist.update({
+    return HistoryValue(**{
         "current": state_value, 
         "states": update_history_states(hist, state_value)})
