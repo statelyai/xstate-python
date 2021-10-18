@@ -1091,57 +1091,77 @@ class TestInternalTransitionWithHistory:
           # });
 
 
+class TestMultistageHistoryStates:
 
-
-
-"""
-
-
-
-describe('multistage history states', () => {
-  const pcWithTurboButtonMachine = Machine({
-    key: 'pc-with-turbo-button',
-    initial: 'off',
-    states: {
-      off: {
-        on: { POWER: 'starting' }
-      },
-      starting: {
-        on: { STARTED: 'running.H' }
-      },
-      running: {
-        initial: 'normal',
+  pcWithTurboButtonMachine = Machine(
+    """
+      {
+        key: 'pc-with-turbo-button',
+        initial: 'off',
         states: {
-          normal: {
-            on: { SWITCH_TURBO: 'turbo' }
+          off: {
+            on: { POWER: 'starting' }
           },
-          turbo: {
-            on: { SWITCH_TURBO: 'normal' }
+          starting: {
+            on: { STARTED: 'running.H' }
           },
-          H: {
-            history: true
+          running: {
+            initial: 'normal',
+            states: {
+              normal: {
+                on: { SWITCH_TURBO: 'turbo' }
+              },
+              turbo: {
+                on: { SWITCH_TURBO: 'normal' }
+              },
+              H: {
+                history: true
+              }
+            },
+            on: {
+              POWER: 'off'
+            }
           }
-        },
-        on: {
-          POWER: 'off'
         }
       }
-    }
-  });
+    """
+  )
 
-  it('should go to the most recently visited state', () => {
-    const onTurboState = pcWithTurboButtonMachine.transition(
-      'running',
-      'SWITCH_TURBO'
-    );
-    const offState = pcWithTurboButtonMachine.transition(onTurboState, 'POWER');
-    const loadingState = pcWithTurboButtonMachine.transition(offState, 'POWER');
+  
 
-    expect(
-      pcWithTurboButtonMachine.transition(loadingState, 'STARTED').value
-    ).toEqual({ running: 'turbo' });
-  });
-});
+  # @pytest.mark.skip(reason="")
+  def test_should_go_to_the_most_recently_visited_state(self, request):
+      """should go to the most recently visited state"""
 
+      def test_procedure(self):
+        onTurboState = self.pcWithTurboButtonMachine.transition(
+                'running',
+                'SWITCH_TURBO'
+              )
+        offState = self.pcWithTurboButtonMachine.transition(onTurboState, 'POWER')
+        loadingState = self.pcWithTurboButtonMachine.transition(offState, 'POWER')
+        finalState = self.pcWithTurboButtonMachine.transition(loadingState, 'STARTED')
+        test_result = finalState.value
+                      
 
-"""
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({ 'running': 'turbo' })
+      # XStateJS
+          #   it('should go to the most recently visited state', () => {
+          #     const onTurboState = pcWithTurboButtonMachine.transition(
+          #       'running',
+          #       'SWITCH_TURBO'
+          #     );
+          #     const offState = pcWithTurboButtonMachine.transition(onTurboState, 'POWER');
+          #     const loadingState = pcWithTurboButtonMachine.transition(offState, 'POWER');
+
+          #     expect(
+          #       pcWithTurboButtonMachine.transition(loadingState, 'STARTED').value
+          #     ).toEqual({ running: 'turbo' });
+          #   });
+          # });
+
