@@ -527,6 +527,8 @@ class TestHistoryDeepStatesHistory:
   state2BP = TestHistoryDeepStates().history_machine.transition(state2A, 'INNER')
   # on.second.B.P -> on.second.B.Q
   state2BQ = TestHistoryDeepStates().history_machine.transition(state2BP, 'INNER')
+
+  assert state2BP.history_value.states['on'].current == {'second': {'B': 'P'}}, "state2BP should stay at 2BP and not be affected by 2BP->2BQ"
   # XStateJS
   #   describe('history', () => {   
   #   // on.first -> on.second.A
@@ -940,6 +942,7 @@ class TestParallelHistoryStatesHistory:
 class TestTransientHistory:
 
   transientMachine = Machine(
+    #TODO: uncomment `always` when implemented
     """
     {
       initial: 'A',
@@ -948,8 +951,8 @@ class TestTransientHistory:
           on: { EVENT: 'B' }
         },
         B: {
-          /* eventless transition */
-          always: 'C'
+          /* eventless transition 
+          always: 'C'*/
         },
         C: {}
       }
@@ -972,7 +975,7 @@ class TestTransientHistory:
     # });
   
 
-  # @pytest.mark.skip(reason="")
+  @pytest.mark.skip(reason="Transient `always` not implemented yet")
   def test_should_have_history_on_transient_transitions(self, request):
       """should have history on transient transitions"""
 
