@@ -997,79 +997,106 @@ class TestTransientHistory:
 
 
 
+class TestInternalTransitionWithHistory:
+
+  machine = Machine(
+    """
+      {
+        key: 'test',
+        initial: 'first',
+        states: {
+          first: {
+            initial: 'foo',
+            states: {
+              foo: {}
+            },
+            on: {
+              NEXT: 'second.other'
+            }
+          },
+          second: {
+            initial: 'nested',
+            states: {
+              nested: {},
+              other: {},
+              hist: {
+                history: true
+              }
+            },
+            on: {
+              NEXT: [
+                {
+                  target: '.hist'
+                }
+              ]
+            }
+          }
+        }
+      }
+    """
+  )
+
+  
+
+  # @pytest.mark.skip(reason="")
+  def test_should_transition_internally_to_the_most_recently_visited_state(self, request):
+      """should transition internally to the most recently visited state"""
+
+      def test_procedure(self):
+        state2 = self.machine.transition(self.machine.root.initial, 'NEXT')
+        state3 = self.machine.transition(state2, 'NEXT')
+        test_result = state3.value
+                      
+
+        return test_result
+
+      test = JSstyleTest()
+      test.it(pytest_func_docstring_summary(request)).expect(
+          test_procedure(self)
+      ).toEqual({ 'second': 'other' })
+      # XStateJS
+          #   it('should transition internally to the most recently visited state', () => {
+          #     // {
+          #     //   $current: 'first',
+          #     //   first: undefined,
+          #     //   second: {
+          #     //     $current: 'nested',
+          #     //     nested: undefined,
+          #     //     other: undefined
+          #     //   }
+          #     // }
+          #     const state2 = machine.transition(machine.initialState, 'NEXT');
+          #     // {
+          #     //   $current: 'second',
+          #     //   first: undefined,
+          #     //   second: {
+          #     //     $current: 'other',
+          #     //     nested: undefined,
+          #     //     other: undefined
+          #     //   }
+          #     // }
+          #     const state3 = machine.transition(state2, 'NEXT');
+          #     // {
+          #     //   $current: 'second',
+          #     //   first: undefined,
+          #     //   second: {
+          #     //     $current: 'other',
+          #     //     nested: undefined,
+          #     //     other: undefined
+          #     //   }
+          #     // }
+
+          #     expect(state3.value).toEqual({ second: 'other' });
+          #   });
+          # });
+
+
+
 
 
 """
 
 
-describe('internal transition with history', () => {
-  const machine = Machine({
-    key: 'test',
-    initial: 'first',
-    states: {
-      first: {
-        initial: 'foo',
-        states: {
-          foo: {}
-        },
-        on: {
-          NEXT: 'second.other'
-        }
-      },
-      second: {
-        initial: 'nested',
-        states: {
-          nested: {},
-          other: {},
-          hist: {
-            history: true
-          }
-        },
-        on: {
-          NEXT: [
-            {
-              target: '.hist'
-            }
-          ]
-        }
-      }
-    }
-  });
-
-  it('should transition internally to the most recently visited state', () => {
-    // {
-    //   $current: 'first',
-    //   first: undefined,
-    //   second: {
-    //     $current: 'nested',
-    //     nested: undefined,
-    //     other: undefined
-    //   }
-    // }
-    const state2 = machine.transition(machine.initialState, 'NEXT');
-    // {
-    //   $current: 'second',
-    //   first: undefined,
-    //   second: {
-    //     $current: 'other',
-    //     nested: undefined,
-    //     other: undefined
-    //   }
-    // }
-    const state3 = machine.transition(state2, 'NEXT');
-    // {
-    //   $current: 'second',
-    //   first: undefined,
-    //   second: {
-    //     $current: 'other',
-    //     nested: undefined,
-    //     other: undefined
-    //   }
-    // }
-
-    expect(state3.value).toEqual({ second: 'other' });
-  });
-});
 
 describe('multistage history states', () => {
   const pcWithTurboButtonMachine = Machine({
