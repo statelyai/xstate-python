@@ -87,10 +87,20 @@ def compute_entry_set(
                 history_value=history_value,
             )
         ancestor = get_transition_domain(t, history_value=history_value)
+        # When processing history the search for states to enter from ancestors must be restricted
         if (ancestor is None
-            or not isinstance(t.config,str)
-            or not all([node.type=='history' and node.history=='deep' for 
-                        node in ancestor.get_from_relative_path(to_state_path(t.config),resolve_history=False)]) 
+            # depenmded on format of t.config, str or dict
+            or not (
+                # str
+                ( isinstance(t.config,str) and all(
+                [node.type=='history' and node.history=='deep'
+                 for node in ancestor.get_from_relative_path(to_state_path(t.config))]))
+                # dict 
+                or ( isinstance(t.config,dict) and any(
+                [node.type=='history' 
+                    for tc in t.target
+                        for node in ancestor.machine.root.get_from_relative_path(tc.path) ]))
+            )
             or history_value is None):
             for s in get_effective_target_states(t, history_value=history_value):
                 add_ancestor_states_to_enter(
