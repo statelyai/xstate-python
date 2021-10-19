@@ -87,15 +87,20 @@ def compute_entry_set(
                 history_value=history_value,
             )
         ancestor = get_transition_domain(t, history_value=history_value)
-        for s in get_effective_target_states(t, history_value=history_value):
-            add_ancestor_states_to_enter(
-                s,
-                ancestor=ancestor,
-                states_to_enter=states_to_enter,
-                states_for_default_entry=states_for_default_entry,
-                default_history_content=default_history_content,
-                history_value=history_value,
-            )
+        if (ancestor is None
+            or not isinstance(t.config,str)
+            or not all([node.type=='history' and node.history=='deep' for 
+                        node in ancestor.get_from_relative_path(to_state_path(t.config),resolve_history=False)]) 
+            or history_value is None):
+            for s in get_effective_target_states(t, history_value=history_value):
+                add_ancestor_states_to_enter(
+                    s,
+                    ancestor=ancestor,
+                    states_to_enter=states_to_enter,
+                    states_for_default_entry=states_for_default_entry,
+                    default_history_content=default_history_content,
+                    history_value=history_value,
+                )
 
 
 def add_descendent_states_to_enter(  # noqa C901 too complex. TODO: simplify function

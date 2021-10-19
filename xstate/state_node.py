@@ -1087,7 +1087,7 @@ class StateNode:
         #     if (childStateNode.type === 'history') {
         #       return childStateNode.resolveHistory();
         #     }
-        if child_state_node.type == "history":
+        if child_state_node.type == "history" and history_value:
             return child_state_node.resolve_history(history_value)
 
         #     if (!this.states[stateKey]) {
