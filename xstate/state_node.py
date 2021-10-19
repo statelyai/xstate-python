@@ -483,8 +483,6 @@ class StateNode:
                     sub_state_node.type == "parallel"
                     or sub_state_node.type == "compound"
                 ):
-                    # TODO: should this be a copy, see JS !, what types is StateValue ? copy does not work for str
-                    # return {[state_value]: sub_state_node.initial_state_value.copy()}
                     return {state_value: sub_state_node.initial_state_value}
 
                 return state_value
@@ -541,7 +539,7 @@ class StateNode:
         #     const configuration = Array.from(
         #       getConfiguration([], this.getStateNodes(state.value))
         #     );
-        # TODO: check this , is Array.from() required
+
         configuration = list(get_configuration([], self.get_state_nodes(state.value)))
 
         #     return new State({
@@ -707,7 +705,7 @@ class StateNode:
         #         (stateNode) => !(stateNode.type === 'history')
         #       );
         if self.type == "parallel":
-            # TODO: wip
+
             initial_state_value = {
                 key: state.initial_state_value
                 if state.initial_state_value is not None
@@ -1141,8 +1139,8 @@ class StateNode:
             StateNode: Returns the child state node from its relative `stateKey`, or throws.
         """
         if history_value is None:
-            # TODO P1, fully implement  what may be required to handle history
-            logger.error(
+            # TODO P1, fully implement  what may be required to handle history, check all calls to get_state_node
+            logger.warning(
                 f"WIP implementing history - get_state_node is not handling history:{history_value}"
             )
         #     if (isStateId(stateKey)) {
@@ -1219,7 +1217,7 @@ class StateNode:
             #         ? this.getStateNodes({ [stateValue]: initialStateValue } as StateValue)
             #         : [this, this.states[stateValue]];
             #     }
-            # TODO: WIP Check this -
+            # TODO: TEST Check this - no unit test currently produces `initial_state_value is not None`
             return (
                 self.get_state_nodes({[state_value]: initial_state_value})
                 if initial_state_value
@@ -1394,9 +1392,7 @@ class StateNode:
             #     while (arrayStatePath.length) {
             while len(array_state_path) > 0:
                 #       const key = arrayStatePath.shift()!;
-                key = (
-                    array_state_path.pop()
-                )  # TODO check equivaelance to js .shift()! , https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#non-null-assertion-operator
+                key = array_state_path.pop()
                 #       if (!key.length) {
                 #         break;
                 #       }
@@ -1580,7 +1576,6 @@ class StateNode:
             #           wildcardConfigs = _d === void 0 ? [] : _d,
             wildcard_configs = []  # Workaround for #TODO: TD implement WILDCARD
             #           strictTransitionConfigs_1 = _tslib.__rest(_b, [typeof _c === "symbol" ? _c : _c + ""]);
-            # TODO: TD implement and tslib.__rest functionationality
             # strictTransitionConfigs_1 = _tslib.__rest(_b, [typeof _c === "symbol" ? _c : _c + ""])
             strict_transition_configs_1 = self.config["on"]
 

@@ -95,9 +95,6 @@ class Transition:
             # return [self.source._get_relative(self.config)]
         elif isinstance(self.config, str) and algorithm.is_state_id(self.config):
             return [self.source.machine.root.get_state_node(self.config, history_value)]
-        # TODO: WIP finish testing the following implementing history
-        # elif True:
-        #     assert False, "Still have to implement history for config is  dict or other"
         elif isinstance(self.config, dict):
             if isinstance(self.config["target"], str):
                 return [self.source._get_relative(self.config["target"], history_value)]

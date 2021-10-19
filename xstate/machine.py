@@ -82,12 +82,10 @@ class Machine:
             # currentState = state if   context is None else  self.resolve_state(State.from(state, context)
             current_state = state
         elif isinstance(state, dict):
-            # TODO current state should be resolved to a StateType, see errors TestHistoryDeepStatesHistory
-            resolved_state_value = self.root.resolve(state)
             # resolved_context = context if context else self.machine.context
             current_state = self.root.resolve_state(
                 State._from(
-                    resolved_state_value,
+                    state,
                     # resolved_context,
                 )
             )
@@ -117,7 +115,7 @@ class Machine:
                 )
             )
 
-        configuration = get_configuration_from_state(  # TODO DEBUG FROM HERE
+        configuration = get_configuration_from_state(
             from_node=self.root, state=current_state, partial_configuration=set()
         )
 

@@ -141,7 +141,7 @@ def add_descendent_states_to_enter(  # noqa C901 too complex. TODO: simplify fun
                 )
         else:
             # default_history_content[state.parent.id] = state.transition.content
-            #TODO: WIP -histoy parallel , following a workaround for implementation to resolve
+            #TODO: WIP -histoy This code does not get touched by current history tests
             default_history_content[state.parent.id] = None
             # for s in state.transition.target:
             #     add_descendent_states_to_enter(
@@ -371,7 +371,7 @@ def done(id: str, data: Any) -> DoneEventObject:
     #   };
     event_object = {"type": type, "data": data}
 
-    # TODO: implement this
+    # TODO: implement this, No Unit Test yet
     #   eventObject.toString = () => type;
 
     #   return eventObject as DoneEvent;
@@ -425,7 +425,7 @@ def enter_states(
             parent = s.parent
             grandparent = parent.parent
             internal_queue.append(Event(f"done.state.{parent.id}", s.donedata))
-            # transitions.add("TRANSITION") #TODO WIP 21W39
+            # transitions.add("TRANSITION") 
 
             if grandparent and is_parallel_state(grandparent):
                 if all(
@@ -433,7 +433,7 @@ def enter_states(
                     for parent_state in get_child_states(grandparent)
                 ):
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
-                    # transitions.add("TRANSITION") #TODO WIP 21W39
+                    # transitions.add("TRANSITION")
 
         #  const historyValue = currentState
         #   ? currentState.historyValue
@@ -445,7 +445,6 @@ def enter_states(
         #     : undefined
 
         #   : undefined;      
-        #TODO check statein-tests where  current_state is a dict type
         hv = current_state.history_value if current_state and current_state.history_value else (
                         s.machine.root._history_value(current_state.value if str(type(current_state)) == "<class 'xstate.state.State'>" else None) if list(enabled_transitions)[0].source else (
                             None if s else None))
@@ -523,7 +522,7 @@ def select_transitions(event: Event, configuration: Set[StateNode]):
                     break_loop = True
 
     enabled_transitions = remove_conflicting_transitions(
-        enabled_transitions, configuration=configuration, history_value={}  # TODO
+        enabled_transitions, configuration=configuration, history_value=HistoryValue()
     )
 
     return enabled_transitions
@@ -546,7 +545,7 @@ def select_eventless_transitions(configuration: Set[StateNode]):
     enabled_transitions = remove_conflicting_transitions(
         enabled_transitions=enabled_transitions,
         configuration=configuration,
-        history_value={},  # TODO
+        history_value=HistoryValue(), 
     )
     return enabled_transitions
 
@@ -646,8 +645,8 @@ def macrostep(
             (configuration, actions, internal_queue, transitions,history_value) = microstep(
                 enabled_transitions=enabled_transitions,
                 configuration=configuration,
-                states_to_invoke=set(),  # TODO
-                history_value=history_value,  # TODO
+                states_to_invoke=set(), 
+                history_value=history_value,
                 transitions=transitions,
                 current_state=current_state,
             )
@@ -988,35 +987,7 @@ def get_configuration_from_state(
     return partial_configuration
 
 
-# TODO REMOVE an try and resolving some test cases
-def DEV_get_configuration_from_state(
-    from_node: StateNode,
-    state: Union[Dict, str],
-    # state: Union[Dict, StateType],
-    partial_configuration: Set[StateNode],
-) -> Set[StateNode]:
-    if isinstance(state, str):
-        state = from_node.states.get(state)
-        partial_configuration.add(state)
-    elif isinstance(state, dict):
-        for key in state.keys():
-            node = from_node.states.get(key)
-            partial_configuration.add(node)
-            get_configuration_from_state(node, state.get(key), partial_configuration)
-    elif str(type(state)) == "<class 'xstate.state.State'>":
-        for state_node in state.configuration:
-            node = from_node.states.get(state_node.key)
-            partial_configuration.add(node)
-            get_configuration_from_state(node, state_node, partial_configuration)
-    elif str(type(state)) == "<class 'xstate.state_node.StateNode'>":
-        for key in state.config.keys():
-            node = from_node.states.get(key)
-            partial_configuration.add(node)
-            get_configuration_from_state(
-                node, state.config.get(key), partial_configuration
-            )
 
-    return partial_configuration
 
 
 def get_adj_list(configuration: Set[StateNode]) -> Dict[str, Set[StateNode]]:
@@ -1227,7 +1198,6 @@ def to_scxml_event(
 def is_state_like(state: any) -> bool:
     return (
         isinstance(state, object)
-        # TODO: which objects are state like ?
         and "<class 'xstate" in str(type(state))
         and "value" in vars(state)
         and "context" in vars(state)

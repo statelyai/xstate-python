@@ -22,8 +22,6 @@ if TYPE_CHECKING:
         SCXML,
     )
 
-    # TODO WIP (history) -
-    # from xstate.???? import History
 
 from anytree import Node, RenderTree, LevelOrderIter
 
@@ -49,7 +47,6 @@ class State:
     ):
         # root = next(iter(configuration)).machine.root
         self.configuration = configuration
-        # TODO TD handle no value but configuarion = []
         if kwargs.get("value", None) is None:
             if self.configuration == []:
                 msg = f"A valid configuration must exist to facilitate state: obtaining state as no value given"
@@ -193,7 +190,7 @@ class State:
                         "activities": state_value.activities,
                         "meta": {},
                         "events": [],
-                        "configuration": [],  # TODO: fix, ( oriiginal comment in JS)
+                        "configuration": [],  # TODO: fix, ( oriiginal comment in JS) look into thoughts in JS
                         "transitions": [],
                         "children": {},
                     }
