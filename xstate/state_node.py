@@ -1069,7 +1069,11 @@ class StateNode:
             return [self]
 
         #     const [stateKey, ...childStatePath] = relativePath;
-        state_key, *child_state_path = relative_path
+        if is_state_id(relative_path[0]):
+            state_key = STATE_DELIMITER.join(relative_path)
+            child_state_path = []
+        else:
+            state_key, *child_state_path = relative_path
 
         #     if (!this.states) {
         #       throw new Error(
@@ -1082,7 +1086,11 @@ class StateNode:
             raise Exception(msg)
 
         #     const childStateNode = this.getStateNode(stateKey);
-        child_state_node = self.get_state_node(state_key)
+        if is_state_id(state_key):
+            child_state_node = self.get_state_node_by_id(state_key)
+            # state_key = state_key.split(STATE_IDENTIFIER)[1]
+        else:
+            child_state_node = self.get_state_node(state_key)
 
         #     if (childStateNode.type === 'history') {
         #       return childStateNode.resolveHistory();
@@ -1096,15 +1104,24 @@ class StateNode:
         #       );
         #     }
 
-        if self.states.get(state_key, None) is None:
+        if (
+            self.get_state_node_by_id(state_key)
+            if is_state_id(state_key)
+            else self.states.get(state_key, None)
+        ) is None:
             msg = f"Child state '{state_key}' does not exist on '{self.id}'"
             logger.error(msg)
             raise Exception(msg)
 
         #     return this.states[stateKey].getFromRelativePath(childStatePath);
-        return self.states[state_key].get_from_relative_path(
-            child_state_path, history_value
-        )
+        if is_state_id(state_key):
+            return self.get_state_node_by_id(state_key).get_from_relative_path(
+                child_state_path, history_value
+            )
+        else:
+            return self.states[state_key].get_from_relative_path(
+                child_state_path, history_value
+            )
 
     def get_state_node(
         self, state_key: str, history_value: HistoryValue = None
