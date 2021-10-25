@@ -35,7 +35,7 @@ skinparam state {
 """
 
     if state_node.initial:
-        initial_state = state_node.initial.target[0].id
+        initial_state = state_node.initial_transition.target[0].id
         initial_string = f"[*] --> {initial_state}\n"
         result += initial_string
 

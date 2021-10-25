@@ -45,54 +45,6 @@ def test_final_state():
     assert red_timeout_state.value == "green"
 
 
-
-fan = Machine(
-    {
-        "id": "fan",
-        "initial": "fanOff",
-        "states": {
-            "fanOff": {
-                "on": {
-                    "POWER": "#fan.fanOn.hist",
-                    "HIGH_POWER": "fanOn.highPowerHist",
-                },
-            },
-            "fanOn": {
-                "initial": "first",
-                "states": {
-                    "first": {"on": {"SWITCH": "second"}},
-                    "second": {"on": {"SWITCH": "third"}},
-                    "third": {},
-                    "hist": {"type": "history", "history": "shallow"},
-                    "highPowerHist": {"type": "history", "target": "third"},
-                },
-                "on": {"POWER": "fanOff"},
-            },
-        },
-    }
-)
-
-
-def test_history_state():
-    on_state = fan.transition(fan.initial_state, "POWER")
-
-    assert on_state.value == "fanOn.first"
-
-    on_second_state = fan.transition(on_state, "SWITCH")
-
-    assert on_second_state.value == "fanOn.second"
-
-    off_state = fan.transition(on_second_state, "POWER")
-
-    assert off_state.value == "fanOff"
-
-    on_second_state = fan.transition(off_state, "POWER")
-
-    assert on_second_state.value == "fanOn.second"
-
-
-
-
 def test_top_level_final():
     final = Machine(
         {
@@ -104,7 +56,7 @@ def test_top_level_final():
             },
         }
     )
-    
+
     end_state = final.transition(final.initial_state, "FINISH")
 
     assert end_state.value == "end"

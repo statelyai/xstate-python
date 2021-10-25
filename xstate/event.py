@@ -1,3 +1,6 @@
+from __future__ import (
+    annotations,
+)  #  PEP 563:__future__.annotations will become the default in Python 3.11
 from typing import Dict, Optional
 
 
