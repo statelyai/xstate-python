@@ -53,13 +53,10 @@ if TYPE_CHECKING:
     from xstate.state import StateType
     from xstate.event import Event
 
-
     from xstate.state import State
 
     # HistoryValue = Dict[str, Set[StateNode]]
-from xstate.types import (
-        HistoryValue
-    )
+from xstate.types import HistoryValue
 
 
 from xstate.event import Event
@@ -78,7 +75,7 @@ def compute_entry_set(
     current_state: StateValue,
 ):
     for t in transitions:
-        for s in t.target_consider_history(history_value= history_value):
+        for s in t.target_consider_history(history_value=history_value):
             add_descendent_states_to_enter(
                 s,
                 states_to_enter=states_to_enter,
@@ -88,20 +85,38 @@ def compute_entry_set(
             )
         ancestor = get_transition_domain(t, history_value=history_value)
         # When processing history the search for states to enter from ancestors must be restricted
-        if (ancestor is None
+        if (
+            ancestor is None
             # depenmded on format of t.config, str or dict
             or not (
                 # str
-                ( isinstance(t.config,str) and all(
-                [node.type=='history' and node.history=='deep'
-                 for node in ancestor.get_from_relative_path(to_state_path(t.config))]))
-                # dict 
-                or ( isinstance(t.config,dict) and any(
-                [node.type=='history' 
-                    for tc in t.target
-                        for node in ancestor.machine.root.get_from_relative_path(tc.path) ]))
+                (
+                    isinstance(t.config, str)
+                    and all(
+                        [
+                            node.type == "history" and node.history == "deep"
+                            for node in ancestor.get_from_relative_path(
+                                to_state_path(t.config)
+                            )
+                        ]
+                    )
+                )
+                # dict
+                or (
+                    isinstance(t.config, dict)
+                    and any(
+                        [
+                            node.type == "history"
+                            for tc in t.target
+                            for node in ancestor.machine.root.get_from_relative_path(
+                                tc.path
+                            )
+                        ]
+                    )
+                )
             )
-            or history_value is None):
+            or history_value is None
+        ):
             for s in get_effective_target_states(t, history_value=history_value):
                 add_ancestor_states_to_enter(
                     s,
@@ -141,7 +156,7 @@ def add_descendent_states_to_enter(  # noqa C901 too complex. TODO: simplify fun
                 )
         else:
             # default_history_content[state.parent.id] = state.transition.content
-            #TODO: WIP -histoy This code does not get touched by current history tests
+            # TODO: WIP -histoy This code does not get touched by current history tests
             default_history_content[state.parent.id] = None
             # for s in state.transition.target:
             #     add_descendent_states_to_enter(
@@ -309,6 +324,7 @@ def get_children(state_node: StateNode) -> List[StateNode]:
 def is_state_id(state_id: str) -> bool:
     return state_id[0] == STATE_IDENTIFIER
 
+
 def is_leaf_node(state_node: StateNode) -> bool:
     return state_node.type == "atomic" or state_node.type == "final"
 
@@ -329,7 +345,10 @@ def get_child_states(state_node: StateNode) -> List[StateNode]:
     return [state_node.states.get(key) for key in state_node.states.keys()]
 
 
-def is_in_final_state(configuration: Set[StateNode],state: StateNode, ) -> bool:
+def is_in_final_state(
+    configuration: Set[StateNode],
+    state: StateNode,
+) -> bool:
     if is_compound_state(state):
         return any(
             [
@@ -338,7 +357,7 @@ def is_in_final_state(configuration: Set[StateNode],state: StateNode, ) -> bool:
             ]
         )
     elif is_parallel_state(state):
-        return all(is_in_final_state(configuration,s) for s in get_child_states(state))
+        return all(is_in_final_state(configuration, s) for s in get_child_states(state))
     else:
         return False
 
@@ -387,7 +406,7 @@ def enter_states(
     actions: List[Action],
     internal_queue: List[Event],
     transitions: List[Transition],
-    current_state:State
+    current_state: State,
 ) -> Tuple[Set[StateNode], List[Action], List[Event]]:
     states_to_enter: Set[StateNode] = set()
     states_for_default_entry: Set[StateNode] = set()
@@ -425,11 +444,11 @@ def enter_states(
             parent = s.parent
             grandparent = parent.parent
             internal_queue.append(Event(f"done.state.{parent.id}", s.donedata))
-            # transitions.add("TRANSITION") 
+            # transitions.add("TRANSITION")
 
             if grandparent and is_parallel_state(grandparent):
                 if all(
-                    is_in_final_state( configuration, parent_state)
+                    is_in_final_state(configuration, parent_state)
                     for parent_state in get_child_states(grandparent)
                 ):
                     internal_queue.append(Event(f"done.state.{grandparent.id}"))
@@ -444,13 +463,23 @@ def enter_states(
         #     ? (this.machine.historyValue(currentState.value) as HistoryValue)
         #     : undefined
 
-        #   : undefined;      
-        hv = current_state.history_value if current_state and current_state.history_value else (
-                        s.machine.root._history_value(current_state.value if str(type(current_state)) == "<class 'xstate.state.State'>" else None) if list(enabled_transitions)[0].source else (
-                            None if s else None))
+        #   : undefined;
+        hv = (
+            current_state.history_value
+            if current_state and current_state.history_value
+            else (
+                s.machine.root._history_value(
+                    current_state.value
+                    if str(type(current_state)) == "<class 'xstate.state.State'>"
+                    else None
+                )
+                if list(enabled_transitions)[0].source
+                else (None if s else None)
+            )
+        )
         if hv:
-            history_value=HistoryValue(**hv.__dict__)
-    return (configuration, actions, internal_queue, transitions,history_value)
+            history_value = HistoryValue(**hv.__dict__)
+    return (configuration, actions, internal_queue, transitions, history_value)
 
 
 def exit_states(
@@ -460,10 +489,12 @@ def exit_states(
     history_value: HistoryValue,
     actions: List[Action],
     internal_queue: List[Event],
-    current_state:State,
+    current_state: State,
 ):
     states_to_exit = compute_exit_set(
-        enabled_transitions, configuration=configuration, history_value=history_value, 
+        enabled_transitions,
+        configuration=configuration,
+        history_value=history_value,
         # current_state=current_state,
     )
     for s in states_to_exit:
@@ -545,7 +576,7 @@ def select_eventless_transitions(configuration: Set[StateNode]):
     enabled_transitions = remove_conflicting_transitions(
         enabled_transitions=enabled_transitions,
         configuration=configuration,
-        history_value=HistoryValue(), 
+        history_value=HistoryValue(),
     )
     return enabled_transitions
 
@@ -589,24 +620,25 @@ def remove_conflicting_transitions(
 
 
 def main_event_loop(
-    configuration: Set[StateNode], event: Event,
-    current_state:State
+    configuration: Set[StateNode], event: Event, current_state: State
 ) -> Tuple[Set[StateNode], List[Action]]:
     states_to_invoke: Set[StateNode] = set()
-    history_value = current_state.history_value if current_state.history_value else HistoryValue()
+    history_value = (
+        current_state.history_value if current_state.history_value else HistoryValue()
+    )
     transitions = set()
     enabled_transitions = select_transitions(event=event, configuration=configuration)
     transitions = transitions.union(enabled_transitions)
-    (configuration, actions, internal_queue, transitions,history_value) = microstep(
+    (configuration, actions, internal_queue, transitions, history_value) = microstep(
         enabled_transitions,
         configuration=configuration,
         states_to_invoke=states_to_invoke,
         history_value=history_value,
         transitions=transitions,
-        current_state=current_state
+        current_state=current_state,
     )
 
-    (configuration, actions, transitions,history_value) = macrostep(
+    (configuration, actions, transitions, history_value) = macrostep(
         configuration=configuration,
         actions=actions,
         internal_queue=internal_queue,
@@ -615,7 +647,7 @@ def main_event_loop(
         history_value=history_value,
     )
 
-    return (configuration, actions, transitions,history_value)
+    return (configuration, actions, transitions, history_value)
 
 
 def macrostep(
@@ -623,8 +655,8 @@ def macrostep(
     actions: List[Action],
     internal_queue: List[Event],
     transitions: List[Transition],
-    current_state: State=None,
-    history_value: HistoryValue=HistoryValue()
+    current_state: State = None,
+    history_value: HistoryValue = HistoryValue(),
 ) -> Tuple[Set[StateNode], List[Action]]:
     enabled_transitions = set()
     macrostep_done = False
@@ -642,16 +674,22 @@ def macrostep(
                     configuration=configuration,
                 )
         if enabled_transitions:
-            (configuration, actions, internal_queue, transitions,history_value) = microstep(
+            (
+                configuration,
+                actions,
+                internal_queue,
+                transitions,
+                history_value,
+            ) = microstep(
                 enabled_transitions=enabled_transitions,
                 configuration=configuration,
-                states_to_invoke=set(), 
+                states_to_invoke=set(),
                 history_value=history_value,
                 transitions=transitions,
                 current_state=current_state,
             )
 
-    return (configuration, actions, transitions,history_value)
+    return (configuration, actions, transitions, history_value)
 
 
 def execute_transition_content(
@@ -677,7 +715,7 @@ def microstep(
     configuration: Set[StateNode],
     states_to_invoke: Set[StateNode],
     history_value: HistoryValue,
-    current_state:State,
+    current_state: State,
 ) -> Tuple[Set[StateNode], List[Action], List[Event]]:
     actions: List[Action] = []
     internal_queue: List[Event] = []
@@ -696,7 +734,7 @@ def microstep(
         enabled_transitions, actions=actions, internal_queue=internal_queue
     )
 
-    _,_,_,_,history_value=enter_states(
+    _, _, _, _, history_value = enter_states(
         enabled_transitions,
         configuration=configuration,
         states_to_invoke=states_to_invoke,
@@ -707,7 +745,7 @@ def microstep(
         current_state=current_state,
     )
 
-    return (configuration, actions, internal_queue, transitions,history_value)
+    return (configuration, actions, internal_queue, transitions, history_value)
 
 
 def is_machine(value):
@@ -987,9 +1025,6 @@ def get_configuration_from_state(
     return partial_configuration
 
 
-
-
-
 def get_adj_list(configuration: Set[StateNode]) -> Dict[str, Set[StateNode]]:
     adj_list: Dict[str, Set[StateNode]] = {}
 
@@ -1119,14 +1154,14 @@ def to_state_paths(state_value: Union[StateValue, None]) -> List[str]:
         #         return [[key]];
         #       }
         if not isinstance(sub_state_value, str) and (
-            sub_state_value is  None or not len(sub_state_value) > 0
+            sub_state_value is None or not len(sub_state_value) > 0
         ):
             return [[key]]
 
         #       return toStatePaths(stateValue[key]).map((subPath) => {
         #         return [key].concat(subPath);
         #       });
-        return [[key]+sub_path for sub_path in to_state_paths(state_value[key])]
+        return [[key] + sub_path for sub_path in to_state_paths(state_value[key])]
         #     })
         #   );
 
@@ -1143,21 +1178,20 @@ def to_state_paths(state_value: Union[StateValue, None]) -> List[str]:
 #   payload?: EventData
 #   // id?: TEvent['type']
 # ): TEvent {
-def to_event_object(
-     event: Event,
-    **kwargs
-)->Event:
+def to_event_object(event: Event, **kwargs) -> Event:
 
-#   if (isString(event) || typeof event === 'number') {
-#     return { type: event, ...payload } as TEvent;
-#   }
+    #   if (isString(event) || typeof event === 'number') {
+    #     return { type: event, ...payload } as TEvent;
+    #   }
 
-    if isinstance(event,str) or isinstance(event, int ):
-        return { "type": event, **kwargs}
-#   }
+    if isinstance(event, str) or isinstance(event, int):
+        return {"type": event, **kwargs}
+    #   }
 
-#   return event;
+    #   return event;
     return event
+
+
 # }
 
 # export function toSCXMLEvent<TEvent extends EventObject>(
@@ -1165,35 +1199,36 @@ def to_event_object(
 #   scxmlEvent?: Partial<SCXML.Event<TEvent>>
 # ): SCXML.Event<TEvent> {
 def to_scxml_event(
-  event: Event,
-)->SCXML.Event:
+    event: Event,
+) -> SCXML.Event:
 
-#   if (!isString(event) && '$$type' in event && event.$$type === 'scxml') {
-#     return event as SCXML.Event<TEvent>;
-#   }
-  if not isinstance(event,str) and '__type' in event and event.__type == 'scxml':
-    return event
-  
+    #   if (!isString(event) && '$$type' in event && event.$$type === 'scxml') {
+    #     return event as SCXML.Event<TEvent>;
+    #   }
+    if not isinstance(event, str) and "__type" in event and event.__type == "scxml":
+        return event
 
-#   const eventObject = toEventObject(event as Event<TEvent>);
-  event_object = to_event_object(event)
+    #   const eventObject = toEventObject(event as Event<TEvent>);
+    event_object = to_event_object(event)
 
-#   return {
-#     name: eventObject.type,
-#     data: eventObject,
-#     $$type: 'scxml',
-#     type: 'external',
-#     ...scxmlEvent
-#   };
-  return {
-    "name": event_object['type'].value[0],
-    "data": event_object,
-    "__type": 'scxml',
-    "_type": 'external',
-    # ...scxmlEvent
-  }
+    #   return {
+    #     name: eventObject.type,
+    #     data: eventObject,
+    #     $$type: 'scxml',
+    #     #type: 'external',
+    #     ...scxmlEvent
+    #   };
+    return {
+        "name": event_object["type"].value[0],
+        "data": event_object,
+        "__type": "scxml",
+        "_type": "external",
+        # ...scxmlEvent
+    }
+
 
 # }
+
 
 def is_state_like(state: any) -> bool:
     return (
@@ -1253,7 +1288,9 @@ def get_value_from_adj(state_node: StateNode, adj_list: Dict[str, Set[StateNode]
     child_state_nodes = adj_list.get(state_node.id)
 
     if is_compound_state(state_node):
-        child_state_node = list(child_state_nodes)[0] if child_state_nodes != set() else None
+        child_state_node = (
+            list(child_state_nodes)[0] if child_state_nodes != set() else None
+        )
 
         if child_state_node:
             if is_atomic_state(child_state_node):
@@ -1278,14 +1315,11 @@ def get_value_from_adj(state_node: StateNode, adj_list: Dict[str, Set[StateNode]
 #   return getValueFromAdj(rootNode, getAdjList(config));
 # }
 
-def get_value(
-  root_node: StateNode,
-  configuration: Configuration
-)->StateValue:
-  config = get_configuration([root_node], configuration)
 
-  return get_value_from_adj(root_node, get_adj_list(config))
+def get_value(root_node: StateNode, configuration: Configuration) -> StateValue:
+    config = get_configuration([root_node], configuration)
 
+    return get_value_from_adj(root_node, get_adj_list(config))
 
 
 def map_values(collection: Dict[str, Any], iteratee: Callable):
@@ -1305,30 +1339,31 @@ def map_values(collection: Dict[str, Any], iteratee: Callable):
 #   predicate: (item: T) => boolean
 # ): { [key: string]: P } {
 
+
 def map_filter_values(
-  collection: Dict ,
-  #TODO: define valid types
-  iteratee: Any,  #(item: T, key: string, collection: { [key: string]: T }) => P,
-  predicate: Any #(item: T) => boolean
-)-> Dict:
+    collection: Dict,
+    # TODO: define valid types
+    iteratee: Any,  # (item: T, key: string, collection: { [key: string]: T }) => P,
+    predicate: Any,  # (item: T) => boolean
+) -> Dict:
 
     #   const result: { [key: string]: P } = {};
-    result = {} 
+    result = {}
 
     #   for (const key of keys(collection)) {
-    for key,item in collection.items():
+    for key, item in collection.items():
 
-    #     const item = collection[key];
+        #     const item = collection[key];
         pass
 
-    #     if (!predicate(item)) {
-    #       continue;
-    #     }
+        #     if (!predicate(item)) {
+        #       continue;
+        #     }
         if not predicate(item):
             continue
 
-    #     result[key] = iteratee(item, key, collection);
-        result[key] = iteratee(item, key, collection);
+        #     result[key] = iteratee(item, key, collection);
+        result[key] = iteratee(item, key, collection)
 
     #   return result;
     return result
@@ -1342,21 +1377,23 @@ def map_filter_values(
 #   props: string[],
 #   accessorProp: keyof T
 # ): (object: T) => T {
-def nested_path(
-  props: List[str],
-  accessorProp: str
-)-> Callable: 
-#   return (object) => {
-#     let result: T = object;
+def nested_path(props: List[str], accessorProp: str) -> Callable:
+    #   return (object) => {
+    #     let result: T = object;
     def func_nested_path(object):
-        result =object
-        
-        for prop in props:
-            result = result[accessorProp].get(prop, None).__dict__ if result[accessorProp] else None
-        
+        result = object
 
-        return  result
+        for prop in props:
+            result = (
+                result[accessorProp].get(prop, None).__dict__
+                if result[accessorProp]
+                else None
+            )
+
+        return result
+
     return func_nested_path
+
 
 #     for (const prop of props) {
 #       result = result[accessorProp][prop];
@@ -1410,27 +1447,28 @@ def nested_path(
 # }
 
 
-def update_history_states(hist:HistoryValue, state_value)->Dict:
+def update_history_states(hist: HistoryValue, state_value) -> Dict:
     def lambda_function(*args):
         sub_hist, key = args[0:2]
         if not sub_hist:
             return None
 
-        sub_state_value = ( 
-            (None if isinstance(state_value, str) else (state_value.get(key,None) ))
-              or (sub_hist.current if sub_hist else None)
-              )
-        
+        sub_state_value = (
+            None if isinstance(state_value, str) else (state_value.get(key, None))
+        ) or (sub_hist.current if sub_hist else None)
 
         if not sub_state_value:
             return None
 
-        return HistoryValue( **{
-            "current": sub_state_value,
-            "states": update_history_states(sub_hist, sub_state_value),
-        })
+        return HistoryValue(
+            **{
+                "current": sub_state_value,
+                "states": update_history_states(sub_hist, sub_state_value),
+            }
+        )
 
     return map_values(hist.states, lambda_function)
+
 
 # export function updateHistoryValue(
 #   hist: HistoryValue,
@@ -1442,7 +1480,8 @@ def update_history_states(hist:HistoryValue, state_value)->Dict:
 #   };
 # }
 
+
 def update_history_value(hist, state_value):
-    return HistoryValue(**{
-        "current": state_value, 
-        "states": update_history_states(hist, state_value)})
+    return HistoryValue(
+        **{"current": state_value, "states": update_history_states(hist, state_value)}
+    )

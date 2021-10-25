@@ -125,8 +125,7 @@ describe('history states', () => {
 
 
 class TestHistoryInitial:
-    """ An initial set of unit tests of History capability
-    """
+    """An initial set of unit tests of History capability"""
 
     def test_history_should_go_to_the_most_recently_visited_state(self, request):
         """should go to the most recently visited state"""
@@ -242,15 +241,17 @@ class TestHistoryInitial:
     #   expect(nextState.history!.history).not.toBeDefined();
     # });
     @pytest.mark.skip(reason="Eventless Transition `Always`, not yet implemented")
-    def test_history_should_go_to_the_most_recently_visited_state_by_a_transient_transition_non_interpreter(self, request):
+    def test_history_should_go_to_the_most_recently_visited_state_by_a_transient_transition_non_interpreter(
+        self, request
+    ):
         """should go to the most recently visited state by a transient transition
 
-          The on event `DESTROY` the state `destroy` should automatically ie `always` proceed to `idle.absent`
+        The on event `DESTROY` the state `destroy` should automatically ie `always` proceed to `idle.absent`
         """
 
         def test_procedure():
-          machine = Machine(
-            """
+            machine = Machine(
+                """
             {
               initial: 'idle',
               states: {
@@ -288,33 +289,35 @@ class TestHistoryInitial:
               }
             }          
             """
-          )
-          initial_state = machine.initial_state
-          # service.send('DEPLOY');
-          next_state= machine.transition(initial_state,"DEPLOY")
-          # service.send('SUCCESS');
-          next_state= machine.transition(next_state,"SUCCESS")
-          # service.send('DESTROY');
-          next_state= machine.transition(next_state,"DESTROY")
-          # service.send('DEPLOY');
-          next_state= machine.transition(next_state,"DEPLOY")
-          # service.send('FAILURE');
-          next_state= machine.transition(next_state,"FAILURE")
-          test_result = next_state.state.value
-          return test_result
+            )
+            initial_state = machine.initial_state
+            # service.send('DEPLOY');
+            next_state = machine.transition(initial_state, "DEPLOY")
+            # service.send('SUCCESS');
+            next_state = machine.transition(next_state, "SUCCESS")
+            # service.send('DESTROY');
+            next_state = machine.transition(next_state, "DESTROY")
+            # service.send('DEPLOY');
+            next_state = machine.transition(next_state, "DEPLOY")
+            # service.send('FAILURE');
+            next_state = machine.transition(next_state, "FAILURE")
+            test_result = next_state.state.value
+            return test_result
 
         test = JSstyleTest()
         test.it(pytest_func_docstring_summary(request)).expect(
             test_procedure()
-        ).toEqual({ 'idle': 'absent' })
+        ).toEqual({"idle": "absent"})
 
     @pytest.mark.skip(reason="interpreter, not yet implemented")
-    def test_history_should_go_to_the_most_recently_visited_state_by_a_transient_transition(self, request):
+    def test_history_should_go_to_the_most_recently_visited_state_by_a_transient_transition(
+        self, request
+    ):
         """should go to the most recently visited state by a transient transition"""
 
         def test_procedure():
-          machine = Machine(
-            """
+            machine = Machine(
+                """
             {
               initial: 'idle',
               states: {
@@ -352,78 +355,80 @@ class TestHistoryInitial:
               }
             }          
             """
-          )
-          service = interpret(machine).start();
+            )
+            service = interpret(machine).start()
 
-          service.send('DEPLOY');
-          service.send('SUCCESS');
-          service.send('DESTROY');
-          service.send('DEPLOY');
-          service.send('FAILURE');
-          test_result = service.state.value
-          return test_result
+            service.send("DEPLOY")
+            service.send("SUCCESS")
+            service.send("DESTROY")
+            service.send("DEPLOY")
+            service.send("FAILURE")
+            test_result = service.state.value
+            return test_result
 
         test = JSstyleTest()
         test.it(pytest_func_docstring_summary(request)).expect(
             test_procedure()
-        ).toEqual({ 'idle': 'absent' })
+        ).toEqual({"idle": "absent"})
         # XStateJS
-          #   it('should go to the most recently visited state by a transient transition', () => {
-            #     const machine = createMachine({
-            #       initial: 'idle',
-            #       states: {
-            #         idle: {
-            #           id: 'idle',
-            #           initial: 'absent',
-            #           states: {
-            #             absent: {
-            #               on: {
-            #                 DEPLOY: '#deploy'
-            #               }
-            #             },
-            #             present: {
-            #               on: {
-            #                 DEPLOY: '#deploy',
-            #                 DESTROY: '#destroy'
-            #               }
-            #             },
-            #             hist: {
-            #               type: 'history'
-            #             }
-            #           }
-            #         },
-            #         deploy: {
-            #           id: 'deploy',
-            #           on: {
-            #             SUCCESS: 'idle.present',
-            #             FAILURE: 'idle.hist'
-            #           }
-            #         },
-            #         destroy: {
-            #           id: 'destroy',
-            #           always: [{ target: 'idle.absent' }]
-            #         }
-            #       }
-            #     });
+        #   it('should go to the most recently visited state by a transient transition', () => {
+        """       
+        #     const machine = createMachine({
+                      #       initial: 'idle',
+                      #       states: {
+                      #         idle: {
+                      #           id: 'idle',
+                      #           initial: 'absent',
+                      #           states: {
+                      #             absent: {
+                      #               on: {
+                      #                 DEPLOY: '#deploy'
+                      #               }
+                      #             },
+                      #             present: {
+                      #               on: {
+                      #                 DEPLOY: '#deploy',
+                      #                 DESTROY: '#destroy'
+                      #               }
+                      #             },
+                      #             hist: {
+                      #               type: 'history'
+                      #             }
+                      #           }
+                      #         },
+                      #         deploy: {
+                      #           id: 'deploy',
+                      #           on: {
+                      #             SUCCESS: 'idle.present',
+                      #             FAILURE: 'idle.hist'
+                      #           }
+                      #         },
+                      #         destroy: {
+                      #           id: 'destroy',
+                      #           always: [{ target: 'idle.absent' }]
+                      #         }
+                      #       }
+                      #     });
 
-          #     const service = interpret(machine).start();
+                    #     const service = interpret(machine).start();
 
-          #     service.send('DEPLOY');
-          #     service.send('SUCCESS');
-          #     service.send('DESTROY');
-          #     service.send('DEPLOY');
-          #     service.send('FAILURE');
+                    #     service.send('DEPLOY');
+                    #     service.send('SUCCESS');
+                    #     service.send('DESTROY');
+                    #     service.send('DEPLOY');
+                    #     service.send('FAILURE');
 
-          #     expect(service.state.value).toEqual({ idle: 'absent' });
-          #   });
-          # });
+                    #     expect(service.state.value).toEqual({ idle: 'absent' });
+                    #   });
+                    # });
+        """
 
 
 class TestHistoryDeepStates:
-    """ A set of unit tests of Deep History States
-    """
+    """A set of unit tests of Deep History States"""
+
     history_machine = Machine(
-      """
+        """
         { 
           key: 'history',
           initial: 'off',
@@ -471,142 +476,158 @@ class TestHistoryDeepStates:
       """
     )
     # XStateJS
-      # describe('deep history states', () => {
-      #   const historyMachine = Machine({
-      #     key: 'history',
-      #     initial: 'off',
-      #     states: {
-      #       off: {
-      #         on: {
-      #           POWER: 'on.history',
-      #           DEEP_POWER: 'on.deepHistory'
-      #         }
-      #       },
-      #       on: {
-      #         initial: 'first',
-      #         states: {
-      #           first: {
-      #             on: { SWITCH: 'second' }
-      #           },
-      #           second: {
-      #             initial: 'A',
-      #             states: {
-      #               A: {
-      #                 on: { INNER: 'B' }
-      #               },
-      #               B: {
-      #                 initial: 'P',
-      #                 states: {
-      #                   P: {
-      #                     on: { INNER: 'Q' }
-      #                   },
-      #                   Q: {}
-      #                 }
-      #               }
-      #             }
-      #           },
-      #           history: { history: 'shallow' },
-      #           deepHistory: {
-      #             history: 'deep'
-      #           }
-      #         },
-      #         on: {
-      #           POWER: 'off'
-      #         }
-      #       }
-      #     }
-      #   });
+    # describe('deep history states', () => {
+    #   const historyMachine = Machine({
+    #     key: 'history',
+    #     initial: 'off',
+    #     states: {
+    #       off: {
+    #         on: {
+    #           POWER: 'on.history',
+    #           DEEP_POWER: 'on.deepHistory'
+    #         }
+    #       },
+    #       on: {
+    #         initial: 'first',
+    #         states: {
+    #           first: {
+    #             on: { SWITCH: 'second' }
+    #           },
+    #           second: {
+    #             initial: 'A',
+    #             states: {
+    #               A: {
+    #                 on: { INNER: 'B' }
+    #               },
+    #               B: {
+    #                 initial: 'P',
+    #                 states: {
+    #                   P: {
+    #                     on: { INNER: 'Q' }
+    #                   },
+    #                   Q: {}
+    #                 }
+    #               }
+    #             }
+    #           },
+    #           history: { history: 'shallow' },
+    #           deepHistory: {
+    #             history: 'deep'
+    #           }
+    #         },
+    #         on: {
+    #           POWER: 'off'
+    #         }
+    #       }
+    #     }
+    #   });
+
 
 class TestHistoryDeepStatesHistory:
-  # on.first -> on.second.A
-  state2A = TestHistoryDeepStates().history_machine.transition(
-    # { 'on': 'first' },
-    'on.first',
-    'SWITCH')
-  # on.second.A -> on.second.B.P
-  state2BP = TestHistoryDeepStates().history_machine.transition(state2A, 'INNER')
-  # on.second.B.P -> on.second.B.Q
-  state2BQ = TestHistoryDeepStates().history_machine.transition(state2BP, 'INNER')
+    # on.first -> on.second.A
+    state2A = TestHistoryDeepStates().history_machine.transition(
+        # { 'on': 'first' },
+        "on.first",
+        "SWITCH",
+    )
+    # on.second.A -> on.second.B.P
+    state2BP = TestHistoryDeepStates().history_machine.transition(state2A, "INNER")
+    # on.second.B.P -> on.second.B.Q
+    state2BQ = TestHistoryDeepStates().history_machine.transition(state2BP, "INNER")
 
-  assert state2BP.history_value.states['on'].current == {'second': {'B': 'P'}}, "state2BP should stay at 2BP and not be affected by 2BP->2BQ"
-  # XStateJS
-  #   describe('history', () => {   
-  #   // on.first -> on.second.A
-  #   const state2A = historyMachine.transition({ on: 'first' }, 'SWITCH');
-  #   // on.second.A -> on.second.B.P
-  #   const state2BP = historyMachine.transition(state2A, 'INNER');
-  #   // on.second.B.P -> on.second.B.Q
-  #   const state2BQ = historyMachine.transition(state2BP, 'INNER');
+    assert state2BP.history_value.states["on"].current == {
+        "second": {"B": "P"}
+    }, "state2BP should stay at 2BP and not be affected by 2BP->2BQ"
+    # XStateJS
+    #   describe('history', () => {
+    #   // on.first -> on.second.A
+    #   const state2A = historyMachine.transition({ on: 'first' }, 'SWITCH');
+    #   // on.second.A -> on.second.B.P
+    #   const state2BP = historyMachine.transition(state2A, 'INNER');
+    #   // on.second.B.P -> on.second.B.Q
+    #   const state2BQ = historyMachine.transition(state2BP, 'INNER');
 
-  # @pytest.mark.skip(reason="")
-  def test_history_should_go_to_the_shallow_history(self, request):
-      """should go to the shallow history"""
+    # @pytest.mark.skip(reason="")
+    def test_history_should_go_to_the_shallow_history(self, request):
+        """should go to the shallow history"""
 
-      def test_procedure(self):
-        # on.second.B.P -> off
-        stateOff = TestHistoryDeepStates.history_machine.transition(self.state2BP, 'POWER')
-        test_result = TestHistoryDeepStates.history_machine.transition(stateOff, 'POWER').value
-        return test_result
+        def test_procedure(self):
+            # on.second.B.P -> off
+            stateOff = TestHistoryDeepStates.history_machine.transition(
+                self.state2BP, "POWER"
+            )
+            test_result = TestHistoryDeepStates.history_machine.transition(
+                stateOff, "POWER"
+            ).value
+            return test_result
 
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({'on':{ 'second': 'A' }})
-      # XStateJS
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"on": {"second": "A"}})
+        # XStateJS
         # it('should go to the shallow history', () => {
         #   // on.second.B.P -> off
         #   const stateOff = historyMachine.transition(state2BP, 'POWER');
         #   expect(historyMachine.transition(stateOff, 'POWER').value).toEqual({
         #     on: { second: 'A' }
 
-  # @pytest.mark.skip(reason="")
-  def test_history_should_go_to_the_deep_history_explicit(self, request):
-      """should go to the deep history (explicit)"""
+    # @pytest.mark.skip(reason="")
+    def test_history_should_go_to_the_deep_history_explicit(self, request):
+        """should go to the deep history (explicit)"""
 
-      def test_procedure(self):
-        # on.second.B.P -> off
-        stateOff = TestHistoryDeepStates.history_machine.transition(self.state2BP, 'POWER')
-        test_result = TestHistoryDeepStates.history_machine.transition(stateOff, 'DEEP_POWER').value
-        return test_result
+        def test_procedure(self):
+            # on.second.B.P -> off
+            stateOff = TestHistoryDeepStates.history_machine.transition(
+                self.state2BP, "POWER"
+            )
+            test_result = TestHistoryDeepStates.history_machine.transition(
+                stateOff, "DEEP_POWER"
+            ).value
+            return test_result
 
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({ 'on': { 'second': { 'B': 'P' }} })
-      # XStateJS
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"on": {"second": {"B": "P"}}})
+        # XStateJS
         # it('should go to the deep history (explicit)', () => {
-          #   // on.second.B.P -> off
-          #   const stateOff = historyMachine.transition(state2BP, 'POWER');
-          #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
-          #     on: { second: { B: 'P' } }
+        #   // on.second.B.P -> off
+        #   const stateOff = historyMachine.transition(state2BP, 'POWER');
+        #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
+        #     on: { second: { B: 'P' } }
 
-  # @pytest.mark.skip(reason="")
-  def test_history_should_go_to_the_deepest_history(self, request):
-      """should go to the deepest history"""
+    # @pytest.mark.skip(reason="")
+    def test_history_should_go_to_the_deepest_history(self, request):
+        """should go to the deepest history"""
 
-      def test_procedure(self):
-        # on.second.B.Q -> off
-        stateOff = TestHistoryDeepStates.history_machine.transition(self.state2BQ, 'POWER')
-        test_result = TestHistoryDeepStates.history_machine.transition(stateOff, 'DEEP_POWER').value
-        return test_result
+        def test_procedure(self):
+            # on.second.B.Q -> off
+            stateOff = TestHistoryDeepStates.history_machine.transition(
+                self.state2BQ, "POWER"
+            )
+            test_result = TestHistoryDeepStates.history_machine.transition(
+                stateOff, "DEEP_POWER"
+            ).value
+            return test_result
 
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({ 'on': { 'second': { 'B': 'Q' }} })
-      # XStateJS
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"on": {"second": {"B": "Q"}}})
+        # XStateJS
         # it('should go to the deepest history', () => {
-          #   // on.second.B.Q -> off
-          #   const stateOff = historyMachine.transition(state2BQ, 'POWER');
-          #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
-          #     on: { second: { B: 'Q' } }
+        #   // on.second.B.Q -> off
+        #   const stateOff = historyMachine.transition(state2BQ, 'POWER');
+        #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
+        #     on: { second: { B: 'Q' } }
 
 
 class TestParallelHistoryStates:
-    """ A set of unit tests for Parallel History States
-    """
+    """A set of unit tests for Parallel History States"""
+
     history_machine = Machine(
-      """
+        """
         { 
           key: 'parallelhistory',
           initial: 'off',
@@ -687,134 +708,146 @@ class TestParallelHistoryStates:
       """
     )
     # XStateJS
-      # describe('parallel history states', () => {
-        #   const historyMachine = Machine({
-        #     key: 'parallelhistory',
-        #     initial: 'off',
-        #     states: {
-        #       off: {
-        #         on: {
-        #           SWITCH: 'on', // go to the initial states
-        #           POWER: 'on.hist',
-        #           DEEP_POWER: 'on.deepHistory',
-        #           PARALLEL_HISTORY: [{ target: ['on.A.hist', 'on.K.hist'] }],
-        #           PARALLEL_SOME_HISTORY: [{ target: ['on.A.C', 'on.K.hist'] }],
-        #           PARALLEL_DEEP_HISTORY: [
-        #             { target: ['on.A.deepHistory', 'on.K.deepHistory'] }
-        #           ]
-        #         }
-        #       },
-        #       on: {
-        #         type: 'parallel',
-        #         states: {
-        #           A: {
-        #             initial: 'B',
-        #             states: {
-        #               B: {
-        #                 on: { INNER_A: 'C' }
-        #               },
-        #               C: {
-        #                 initial: 'D',
-        #                 states: {
-        #                   D: {
-        #                     on: { INNER_A: 'E' }
-        #                   },
-        #                   E: {}
-        #                 }
-        #               },
-        #               hist: { history: true },
-        #               deepHistory: {
-        #                 history: 'deep'
-        #               }
-        #             }
-        #           },
-        #           K: {
-        #             initial: 'L',
-        #             states: {
-        #               L: {
-        #                 on: { INNER_K: 'M' }
-        #               },
-        #               M: {
-        #                 initial: 'N',
-        #                 states: {
-        #                   N: {
-        #                     on: { INNER_K: 'O' }
-        #                   },
-        #                   O: {}
-        #                 }
-        #               },
-        #               hist: { history: true },
-        #               deepHistory: {
-        #                 history: 'deep'
-        #               }
-        #             }
-        #           },
-        #           hist: {
-        #             history: true
-        #           },
-        #           shallowHistory: {
-        #             history: 'shallow'
-        #           },
-        #           deepHistory: {
-        #             history: 'deep'
-        #           }
-        #         },
-        #         on: {
-        #           POWER: 'off'
-        #         }
-        #       }
-        #     }
-        #   });
+    # describe('parallel history states', () => {
+    #   const historyMachine = Machine({
+    #     key: 'parallelhistory',
+    #     initial: 'off',
+    #     states: {
+    #       off: {
+    #         on: {
+    #           SWITCH: 'on', // go to the initial states
+    #           POWER: 'on.hist',
+    #           DEEP_POWER: 'on.deepHistory',
+    #           PARALLEL_HISTORY: [{ target: ['on.A.hist', 'on.K.hist'] }],
+    #           PARALLEL_SOME_HISTORY: [{ target: ['on.A.C', 'on.K.hist'] }],
+    #           PARALLEL_DEEP_HISTORY: [
+    #             { target: ['on.A.deepHistory', 'on.K.deepHistory'] }
+    #           ]
+    #         }
+    #       },
+    #       on: {
+    #         #type: 'parallel',
+    #         states: {
+    #           A: {
+    #             initial: 'B',
+    #             states: {
+    #               B: {
+    #                 on: { INNER_A: 'C' }
+    #               },
+    #               C: {
+    #                 initial: 'D',
+    #                 states: {
+    #                   D: {
+    #                     on: { INNER_A: 'E' }
+    #                   },
+    #                   E: {}
+    #                 }
+    #               },
+    #               hist: { history: true },
+    #               deepHistory: {
+    #                 history: 'deep'
+    #               }
+    #             }
+    #           },
+    #           K: {
+    #             initial: 'L',
+    #             states: {
+    #               L: {
+    #                 on: { INNER_K: 'M' }
+    #               },
+    #               M: {
+    #                 initial: 'N',
+    #                 states: {
+    #                   N: {
+    #                     on: { INNER_K: 'O' }
+    #                   },
+    #                   O: {}
+    #                 }
+    #               },
+    #               hist: { history: true },
+    #               deepHistory: {
+    #                 history: 'deep'
+    #               }
+    #             }
+    #           },
+    #           hist: {
+    #             history: true
+    #           },
+    #           shallowHistory: {
+    #             history: 'shallow'
+    #           },
+    #           deepHistory: {
+    #             history: 'deep'
+    #           }
+    #         },
+    #         on: {
+    #           POWER: 'off'
+    #         }
+    #       }
+    #     }
+    #   });
+
 
 class TestParallelHistoryStatesHistory:
 
-  # on.first -> on.second.A
-  stateABKL = TestParallelHistoryStates().history_machine.transition(
-    TestParallelHistoryStates().history_machine.initial_state,
-    'SWITCH'
-  )
-  # INNER_A twice
-  stateACDKL = TestParallelHistoryStates().history_machine.transition(stateABKL, 'INNER_A')
-  stateACEKL = TestParallelHistoryStates().history_machine.transition(stateACDKL, 'INNER_A')
+    # on.first -> on.second.A
+    stateABKL = TestParallelHistoryStates().history_machine.transition(
+        TestParallelHistoryStates().history_machine.initial_state, "SWITCH"
+    )
+    # INNER_A twice
+    stateACDKL = TestParallelHistoryStates().history_machine.transition(
+        stateABKL, "INNER_A"
+    )
+    stateACEKL = TestParallelHistoryStates().history_machine.transition(
+        stateACDKL, "INNER_A"
+    )
 
-  #  INNER_K twice
-  stateACEKMN = TestParallelHistoryStates().history_machine.transition(stateACEKL, 'INNER_K')
-  stateACEKMO = TestParallelHistoryStates().history_machine.transition(stateACEKMN, 'INNER_K')
+    #  INNER_K twice
+    stateACEKMN = TestParallelHistoryStates().history_machine.transition(
+        stateACEKL, "INNER_K"
+    )
+    stateACEKMO = TestParallelHistoryStates().history_machine.transition(
+        stateACEKMN, "INNER_K"
+    )
 
-  # XStateJS
+    # XStateJS
     # describe('history', () => {
-      #   // on.first -> on.second.A
-      #   const stateABKL = historyMachine.transition(
-      #     historyMachine.initialState,
-      #     'SWITCH'
-      #   );
-      #   // INNER_A twice
-      #   const stateACDKL = historyMachine.transition(stateABKL, 'INNER_A');
-      #   const stateACEKL = historyMachine.transition(stateACDKL, 'INNER_A');
+    #   // on.first -> on.second.A
+    #   const stateABKL = historyMachine.transition(
+    #     historyMachine.initialState,
+    #     'SWITCH'
+    #   );
+    #   // INNER_A twice
+    #   const stateACDKL = historyMachine.transition(stateABKL, 'INNER_A');
+    #   const stateACEKL = historyMachine.transition(stateACDKL, 'INNER_A');
 
-      #   // INNER_K twice
-      #   const stateACEKMN = historyMachine.transition(stateACEKL, 'INNER_K');
-      #   const stateACEKMO = historyMachine.transition(stateACEKMN, 'INNER_K');
+    #   // INNER_K twice
+    #   const stateACEKMN = historyMachine.transition(stateACEKL, 'INNER_K');
+    #   const stateACEKMO = historyMachine.transition(stateACEKMN, 'INNER_K');
 
+    # @pytest.mark.skip(reason="")
+    def test_should_ignore_parallel_state_history(self, request):
+        """should ignore parallel state history"""
 
-  # @pytest.mark.skip(reason="")
-  def test_should_ignore_parallel_state_history(self, request):
-      """should ignore parallel state history"""
+        def test_procedure(self):
+            # on.second.B.P -> off
 
-      def test_procedure(self):
-        # on.second.B.P -> off
+            stateOff = TestParallelHistoryStates().history_machine.transition(
+                self.stateACDKL, "POWER"
+            )
+            test_result = (
+                TestParallelHistoryStates()
+                .history_machine.transition(stateOff, "POWER")
+                .value
+            )
 
+            return test_result
 
-        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACDKL, 'POWER')
-        test_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'POWER').value
-
-        return test_result
-
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({'on': { 'A': 'B', 'K': 'L' }})
-      # XStateJS
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"on": {"A": "B", "K": "L"}})
+        # XStateJS
         # it('should ignore parallel state history', () => {
         #   const stateOff = historyMachine.transition(stateACDKL, 'POWER');
         #   expect(historyMachine.transition(stateOff, 'POWER').value).toEqual({
@@ -822,21 +855,25 @@ class TestParallelHistoryStatesHistory:
         #   });
         # });
 
- # @pytest.mark.skip(reason="")
-  def test_should_remember_first_level_state_history(self, request):
-      """should remember first level state history"""
+    # @pytest.mark.skip(reason="")
+    def test_should_remember_first_level_state_history(self, request):
+        """should remember first level state history"""
 
-      def test_procedure(self):
-        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACDKL, 'POWER')
-        transition_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'DEEP_POWER')
-        test_result = transition_result.value
-        return test_result
+        def test_procedure(self):
+            stateOff = TestParallelHistoryStates().history_machine.transition(
+                self.stateACDKL, "POWER"
+            )
+            transition_result = TestParallelHistoryStates().history_machine.transition(
+                stateOff, "DEEP_POWER"
+            )
+            test_result = transition_result.value
+            return test_result
 
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({'on': { 'A':  { 'C': 'D' }, 'K': 'L' }})
-      # XStateJS
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"on": {"A": {"C": "D"}, "K": "L"}})
+        # XStateJS
         # it('should remember first level state history', () => {
         #   const stateOff = historyMachine.transition(stateACDKL, 'POWER');
         #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
@@ -844,21 +881,25 @@ class TestParallelHistoryStatesHistory:
         #   });
         # });
 
- # @pytest.mark.skip(reason="")
-  def test_should_re_enter_each_regions_of_parallel_state_correctly(self, request):
-      """should re-enter each regions of parallel state correctly"""
+    # @pytest.mark.skip(reason="")
+    def test_should_re_enter_each_regions_of_parallel_state_correctly(self, request):
+        """should re-enter each regions of parallel state correctly"""
 
-      def test_procedure(self):
-        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACEKMO, 'POWER')
-        transition_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'DEEP_POWER')
-        test_result = transition_result.value
-        return test_result
+        def test_procedure(self):
+            stateOff = TestParallelHistoryStates().history_machine.transition(
+                self.stateACEKMO, "POWER"
+            )
+            transition_result = TestParallelHistoryStates().history_machine.transition(
+                stateOff, "DEEP_POWER"
+            )
+            test_result = transition_result.value
+            return test_result
 
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({'on': { 'A':  { 'C': 'E' }, 'K': { 'M': 'O' } }})
-      # XStateJS
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"on": {"A": {"C": "E"}, "K": {"M": "O"}}})
+        # XStateJS
         # it('should re-enter each regions of parallel state correctly', () => {
         #   const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
         #   expect(historyMachine.transition(stateOff, 'DEEP_POWER').value).toEqual({
@@ -866,20 +907,24 @@ class TestParallelHistoryStatesHistory:
         #   });
         # });
 
-  def test_should_re_enter_multiple_history_states(self, request):
-      """should re-enter multiple history states"""
+    def test_should_re_enter_multiple_history_states(self, request):
+        """should re-enter multiple history states"""
 
-      def test_procedure(self):
-        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACEKMO, 'POWER')
-        transition_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'PARALLEL_HISTORY')
-        test_result = transition_result.value
-        return test_result
+        def test_procedure(self):
+            stateOff = TestParallelHistoryStates().history_machine.transition(
+                self.stateACEKMO, "POWER"
+            )
+            transition_result = TestParallelHistoryStates().history_machine.transition(
+                stateOff, "PARALLEL_HISTORY"
+            )
+            test_result = transition_result.value
+            return test_result
 
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({'on': { 'A': { 'C': 'D' }, 'K': { 'M': 'N' } }})
-      # XStateJS
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"on": {"A": {"C": "D"}, "K": {"M": "N"}}})
+        # XStateJS
         # it('should re-enter multiple history states', () => {
         #   const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
         #   expect(
@@ -889,20 +934,24 @@ class TestParallelHistoryStatesHistory:
         #   });
         # });
 
-  def test_should_re_enter_a_parallel_with_partial_history(self, request):
-      """should re-enter a parallel with partial history"""
+    def test_should_re_enter_a_parallel_with_partial_history(self, request):
+        """should re-enter a parallel with partial history"""
 
-      def test_procedure(self):
-        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACEKMO, 'POWER')
-        transition_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'PARALLEL_SOME_HISTORY')
-        test_result = transition_result.value
-        return test_result
+        def test_procedure(self):
+            stateOff = TestParallelHistoryStates().history_machine.transition(
+                self.stateACEKMO, "POWER"
+            )
+            transition_result = TestParallelHistoryStates().history_machine.transition(
+                stateOff, "PARALLEL_SOME_HISTORY"
+            )
+            test_result = transition_result.value
+            return test_result
 
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({'on': { 'A': { 'C': 'D' }, 'K': { 'M': 'N' } }})
-      # XStateJS
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"on": {"A": {"C": "D"}, "K": {"M": "N"}}})
+        # XStateJS
         # it('should re-enter a parallel with partial history', () => {
         #   const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
         #   expect(
@@ -912,21 +961,24 @@ class TestParallelHistoryStatesHistory:
         #   });
         # });
 
+    def test_should_re_enter_a_parallel_with_full_history(self, request):
+        """should re-enter a parallel with full history"""
 
-  def test_should_re_enter_a_parallel_with_full_history(self, request):
-      """should re-enter a parallel with full history"""
+        def test_procedure(self):
+            stateOff = TestParallelHistoryStates().history_machine.transition(
+                self.stateACEKMO, "POWER"
+            )
+            transition_result = TestParallelHistoryStates().history_machine.transition(
+                stateOff, "PARALLEL_DEEP_HISTORY"
+            )
+            test_result = transition_result.value
+            return test_result
 
-      def test_procedure(self):
-        stateOff = TestParallelHistoryStates().history_machine.transition(self.stateACEKMO, 'POWER')
-        transition_result =TestParallelHistoryStates().history_machine.transition(stateOff, 'PARALLEL_DEEP_HISTORY')
-        test_result = transition_result.value
-        return test_result
-
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({'on': { 'A': { 'C': 'E' }, 'K': { 'M': 'O' } }})
-      # XStateJS
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"on": {"A": {"C": "E"}, "K": {"M": "O"}}})
+        # XStateJS
         # it('should re-enter a parallel with full history', () => {
         #   const stateOff = historyMachine.transition(stateACEKMO, 'POWER');
         #   expect(
@@ -937,13 +989,11 @@ class TestParallelHistoryStatesHistory:
         # });
 
 
-
-
 class TestTransientHistory:
 
-  transientMachine = Machine(
-    #TODO: uncomment `always` when implemented
-    """
+    transientMachine = Machine(
+        # TODO: uncomment `always` when implemented
+        """
     {
       initial: 'A',
       states: {
@@ -958,7 +1008,7 @@ class TestTransientHistory:
       }
     }
     """
-  )
+    )
 
     # const transientMachine = Machine({
     #   initial: 'A',
@@ -973,24 +1023,22 @@ class TestTransientHistory:
     #     C: {}
     #   }
     # });
-  
 
-  @pytest.mark.skip(reason="Transient `always` not implemented yet")
-  def test_should_have_history_on_transient_transitions(self, request):
-      """should have history on transient transitions"""
+    @pytest.mark.skip(reason="Transient `always` not implemented yet")
+    def test_should_have_history_on_transient_transitions(self, request):
+        """should have history on transient transitions"""
 
-      def test_procedure(self):
-        nextState = self.transientMachine.transition('A', 'EVENT')
-        test_result = (nextState.value=='C' 
-                      and nextState.history is not None)
+        def test_procedure(self):
+            nextState = self.transientMachine.transition("A", "EVENT")
+            test_result = nextState.value == "C" and nextState.history is not None
 
-        return test_result
+            return test_result
 
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual(True)
-      # XStateJS
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual(True)
+        # XStateJS
         #   it('should have history on transient transitions', () => {
         #     const nextState = transientMachine.transition('A', 'EVENT');
         #     expect(nextState.value).toEqual('C');
@@ -999,11 +1047,10 @@ class TestTransientHistory:
         # });
 
 
-
 class TestInternalTransitionWithHistory:
 
-  machine = Machine(
-    """
+    machine = Machine(
+        """
       {
         key: 'test',
         initial: 'first',
@@ -1037,67 +1084,66 @@ class TestInternalTransitionWithHistory:
         }
       }
     """
-  )
+    )
 
-  
+    # @pytest.mark.skip(reason="")
+    def test_should_transition_internally_to_the_most_recently_visited_state(
+        self, request
+    ):
+        """should transition internally to the most recently visited state"""
 
-  # @pytest.mark.skip(reason="")
-  def test_should_transition_internally_to_the_most_recently_visited_state(self, request):
-      """should transition internally to the most recently visited state"""
+        def test_procedure(self):
+            state2 = self.machine.transition(self.machine.root.initial, "NEXT")
+            state3 = self.machine.transition(state2, "NEXT")
+            test_result = state3.value
 
-      def test_procedure(self):
-        state2 = self.machine.transition(self.machine.root.initial, 'NEXT')
-        state3 = self.machine.transition(state2, 'NEXT')
-        test_result = state3.value
-                      
+            return test_result
 
-        return test_result
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"second": "other"})
+        # XStateJS
+        #   it('should transition internally to the most recently visited state', () => {
+        #     // {
+        #     //   $current: 'first',
+        #     //   first: undefined,
+        #     //   second: {
+        #     //     $current: 'nested',
+        #     //     nested: undefined,
+        #     //     other: undefined
+        #     //   }
+        #     // }
+        #     const state2 = machine.transition(machine.initialState, 'NEXT');
+        #     // {
+        #     //   $current: 'second',
+        #     //   first: undefined,
+        #     //   second: {
+        #     //     $current: 'other',
+        #     //     nested: undefined,
+        #     //     other: undefined
+        #     //   }
+        #     // }
+        #     const state3 = machine.transition(state2, 'NEXT');
+        #     // {
+        #     //   $current: 'second',
+        #     //   first: undefined,
+        #     //   second: {
+        #     //     $current: 'other',
+        #     //     nested: undefined,
+        #     //     other: undefined
+        #     //   }
+        #     // }
 
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({ 'second': 'other' })
-      # XStateJS
-          #   it('should transition internally to the most recently visited state', () => {
-          #     // {
-          #     //   $current: 'first',
-          #     //   first: undefined,
-          #     //   second: {
-          #     //     $current: 'nested',
-          #     //     nested: undefined,
-          #     //     other: undefined
-          #     //   }
-          #     // }
-          #     const state2 = machine.transition(machine.initialState, 'NEXT');
-          #     // {
-          #     //   $current: 'second',
-          #     //   first: undefined,
-          #     //   second: {
-          #     //     $current: 'other',
-          #     //     nested: undefined,
-          #     //     other: undefined
-          #     //   }
-          #     // }
-          #     const state3 = machine.transition(state2, 'NEXT');
-          #     // {
-          #     //   $current: 'second',
-          #     //   first: undefined,
-          #     //   second: {
-          #     //     $current: 'other',
-          #     //     nested: undefined,
-          #     //     other: undefined
-          #     //   }
-          #     // }
-
-          #     expect(state3.value).toEqual({ second: 'other' });
-          #   });
-          # });
+        #     expect(state3.value).toEqual({ second: 'other' });
+        #   });
+        # });
 
 
 class TestMultistageHistoryStates:
 
-  pcWithTurboButtonMachine = Machine(
-    """
+    pcWithTurboButtonMachine = Machine(
+        """
       {
         key: 'pc-with-turbo-button',
         initial: 'off',
@@ -1128,43 +1174,40 @@ class TestMultistageHistoryStates:
         }
       }
     """
-  )
+    )
 
-  
+    # @pytest.mark.skip(reason="")
+    def test_should_go_to_the_most_recently_visited_state(self, request):
+        """should go to the most recently visited state"""
 
-  # @pytest.mark.skip(reason="")
-  def test_should_go_to_the_most_recently_visited_state(self, request):
-      """should go to the most recently visited state"""
+        def test_procedure(self):
+            onTurboState = self.pcWithTurboButtonMachine.transition(
+                "running", "SWITCH_TURBO"
+            )
+            offState = self.pcWithTurboButtonMachine.transition(onTurboState, "POWER")
+            loadingState = self.pcWithTurboButtonMachine.transition(offState, "POWER")
+            finalState = self.pcWithTurboButtonMachine.transition(
+                loadingState, "STARTED"
+            )
+            test_result = finalState.value
 
-      def test_procedure(self):
-        onTurboState = self.pcWithTurboButtonMachine.transition(
-                'running',
-                'SWITCH_TURBO'
-              )
-        offState = self.pcWithTurboButtonMachine.transition(onTurboState, 'POWER')
-        loadingState = self.pcWithTurboButtonMachine.transition(offState, 'POWER')
-        finalState = self.pcWithTurboButtonMachine.transition(loadingState, 'STARTED')
-        test_result = finalState.value
-                      
+            return test_result
 
-        return test_result
+        test = JSstyleTest()
+        test.it(pytest_func_docstring_summary(request)).expect(
+            test_procedure(self)
+        ).toEqual({"running": "turbo"})
+        # XStateJS
+        #   it('should go to the most recently visited state', () => {
+        #     const onTurboState = pcWithTurboButtonMachine.transition(
+        #       'running',
+        #       'SWITCH_TURBO'
+        #     );
+        #     const offState = pcWithTurboButtonMachine.transition(onTurboState, 'POWER');
+        #     const loadingState = pcWithTurboButtonMachine.transition(offState, 'POWER');
 
-      test = JSstyleTest()
-      test.it(pytest_func_docstring_summary(request)).expect(
-          test_procedure(self)
-      ).toEqual({ 'running': 'turbo' })
-      # XStateJS
-          #   it('should go to the most recently visited state', () => {
-          #     const onTurboState = pcWithTurboButtonMachine.transition(
-          #       'running',
-          #       'SWITCH_TURBO'
-          #     );
-          #     const offState = pcWithTurboButtonMachine.transition(onTurboState, 'POWER');
-          #     const loadingState = pcWithTurboButtonMachine.transition(offState, 'POWER');
-
-          #     expect(
-          #       pcWithTurboButtonMachine.transition(loadingState, 'STARTED').value
-          #     ).toEqual({ running: 'turbo' });
-          #   });
-          # });
-
+        #     expect(
+        #       pcWithTurboButtonMachine.transition(loadingState, 'STARTED').value
+        #     ).toEqual({ running: 'turbo' });
+        #   });
+        # });
