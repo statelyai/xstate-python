@@ -9,7 +9,6 @@ keywords = ["Answer Set Programming", "wrapper", "clingo"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9"
@@ -22,7 +21,7 @@ packages = [
 docs = "https://github.com/davidkpiano/xstate-python"
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = "^3.7.0"
 Js2Py = "^0.71"
 anytree = "^2.8.0"
 
